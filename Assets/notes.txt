@@ -1,0 +1,13 @@
+- setup camera controls
+- setup locomotion
+	left controller: move with joystick & teleport
+	right controller: camera rotation with joystick
+- objects interaction
+    - left controller has a text field slightly above itself
+
+
+Velocity Tracking
+Joystick: rotate
+A - B buttons: move
+Middle trigger: pick up
+

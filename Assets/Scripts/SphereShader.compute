@@ -1,0 +1,32 @@
+#pragma kernel CSMain
+
+RWStructuredBuffer<float3> vertexBuffer;
+// RWStructuredBuffer<float3> testBuffer;
+
+float _Time;
+float radius;
+float V;
+uint size;
+//uint _VertexCount;
+
+float sectorStep;
+float stackStep;
+float theta;
+float phi;
+
+
+[numthreads(32,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x > size) return;
+
+    // float x, y, z;
+    // float nx, ny, nz, lengthInv;
+    // float s, t;
+
+    // theta = 0;
+    // phi = 0;
+
+    // lengthInv = 1 / radius;
+
+}
