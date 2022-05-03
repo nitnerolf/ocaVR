@@ -45,7 +45,9 @@ public class RayInteractor : MonoBehaviour
     bool isAlreadyHoldingObject = false;
     GameObject hitObject = null;
     bool collided = false;
-    Vector3 rotation;
+    Vector3 initialRotation;
+    Quaternion initialRotationQ;
+    Quaternion initialRotationQController;
 
     public GameObject attachPoint;
     public Vector3 currentPosition;
@@ -86,15 +88,6 @@ public class RayInteractor : MonoBehaviour
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primary2DAxis, out axis);
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceVelocity, out controllerVelocity);
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceAcceleration, out controllerAccel);
-    }
-
-    void FixedUpdate()
-    {
-
-
-        /////////////////////
-        // Left hand Raycast
-        /////////////////////
 
 
         RaycastHit hitResult;
@@ -109,11 +102,14 @@ public class RayInteractor : MonoBehaviour
 
                 hitObject = hitResult.transform.gameObject;
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
-                hitObjectRigidbody.isKinematic = false;
                 // hitObjectRigidbody.detectCollisions = false;
+                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                hitObjectRigidbody.isKinematic = true;
                 hitObjectRigidbody.useGravity = false;
-                rotation = hitObject.transform.rotation.eulerAngles;
-                // rotation = Vector3.zero;
+                initialRotation = hitObject.transform.rotation.eulerAngles;
+                initialRotationQ = hitObjectRigidbody.rotation;
+                initialRotationQController = GetComponent<Rigidbody>().rotation;
+                // initialRotation = Vector3.zero;
                 objectHitDistance = Vector3.Distance(hitObject.transform.position, currentPosition);
                 // hitObject.transform.parent = attachPoint.transform;
                 if (gripButton)
@@ -122,6 +118,44 @@ public class RayInteractor : MonoBehaviour
         }
         else lineRenderer.startColor = Color.green;
         Debug.DrawRay(currentPosition, currentDirection * drawDistance, Color.red);
+
+
+        switch (interactionState)
+        {
+            case InteractionStates.HOLDING:
+                {
+                    if (indexTrigger)
+                    {
+                        if (hitObjectRigidbody.constraints == (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
+                            break;
+
+                        Vector3 _rotation = Vector3.zero;
+                        if (Mathf.Abs(axis.x) > .7f)
+                        {
+                            _rotation.y = axis.x * -1f;
+                            hitObject.transform.Rotate(new Vector3(0, -1, 0) * axis.x * rotationSpeed * Time.fixedDeltaTime, Space.World);
+                        }
+                        if (Mathf.Abs(axis.y) > .7f)
+                        {
+                            _rotation.x = axis.y;
+                            hitObject.transform.Rotate(new Vector3(1, 0, 0) * axis.y * rotationSpeed * Time.fixedDeltaTime, Space.World);
+                        }
+                        initialRotation += _rotation * rotationSpeed * Time.deltaTime;
+                    }
+                }
+                break;
+
+            default: break;
+        }
+    }
+
+    void FixedUpdate()
+    {
+
+
+        /////////////////////
+        // Left hand Raycast
+        /////////////////////
 
 
 
@@ -135,7 +169,6 @@ public class RayInteractor : MonoBehaviour
         if ((indexTrigger | gripButton) && noPreviousInteracion && hitObject && !(isAlreadyHoldingObject))
         {
             interactionState = InteractionStates.HOLDING;
-            // hitObject.GetComponent<Rigidbody>().isKinematic = true;
             isAlreadyHoldingObject = true;
         }
         else if ((indexTrigger | gripButton) == false && interactionState == InteractionStates.HOLDING)
@@ -179,43 +212,12 @@ public class RayInteractor : MonoBehaviour
                         }
 
                         Vector3 newPostion = currentPosition + currentDirection * (objectHitDistance + objectDisplacement);
-
-                        Vector3 _rotation = Vector3.zero;
-                        if (Mathf.Abs(axis.x) > .7f)
-                            _rotation.y = axis.x * -1f;
-                        if (Mathf.Abs(axis.y) > .7f)
-                            _rotation.x = axis.y;
-                        // rotation += _rotation * rotationSpeed * Time.deltaTime;
-                        // rotation += new Vector3(axis.y, axis.x);
-                        // transform.rotation * Quaternion.Euler(rotation) * Quaternion.Euler(Vector3.forward) *
-                        // hitObjectRigidbody.MoveRotation(hitObject.transform.localToWorldMatrix.rotation * Quaternion.Euler(new Vector3(axis.x, axis.y)));
-                        // hitObjectRigidbody.MoveRotation(hitObject.transform.localToWorldMatrix.rotation);
-                        // hitObject.transform.Rotate(new Vector3(_rotation.x, _rotation.y) * rotationSpeed * Time.deltaTime, Space.World);
-                        Vector3 right = Vector3.Cross(Vector3.up, transform.forward);
-                        // var xRot = Quaternion.AngleAxis(rotation.x * rotationSpeed * Time.deltaTime, right);
-                        // var zRot = Quaternion.AngleAxis(rotation.y * rotationSpeed * Time.deltaTime, xRot * transform.forward);
-
-                        // hitObject.transform.rotation = Quaternion.Euler(rotation);
-                        // hitObject.transform.Rotate(Vector3.left * axis.y, Space.World);
-                        // hitObjectRigidbody.MoveRotation(GetComponent<Rigidbody>().rotation * Quaternion.Euler(rotation));
-                        var xRot = Quaternion.AngleAxis((rotation.x * -1) * rotationSpeed * Time.deltaTime, Vector3.left);
-                        var yRot = Quaternion.AngleAxis(rotation.y * rotationSpeed * Time.deltaTime, Vector3.forward);
-                        hitObjectRigidbody.rotation = Quaternion.Euler(rotation) * GetComponent<Rigidbody>().rotation * (yRot);
-                        // hitObjectRigidbody.rotation = GetComponent<Rigidbody>().rotation * Quaternion.AngleAxis(rotation.y * rotationSpeed * Time.deltaTime, Vector3.forward);
-                        // hitObjectRigidbody.rotation = GetComponent<Rigidbody>().rotation * Quaternion.AngleAxis((rotation.x *-1)* rotationSpeed * Time.deltaTime, Vector3.left);
                         hitObjectRigidbody.MovePosition(newPostion);
                     }
                     else if (gripButton)
                     {
-                        // hitObjectRigidbody.MoveRotation(Quaternion.Euler(axis));
-                        Vector3 _rotation = Vector3.zero;
-                        if (Mathf.Abs(axis.x) > .7f)
-                            _rotation.y = axis.x * -1f;
-                        if (Mathf.Abs(axis.y) > .7f)
-                            _rotation.x = axis.y;
-                        rotation += _rotation * rotationSpeed;
-
-                        hitObjectRigidbody.MoveRotation(Quaternion.Euler(rotation));
+                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
+                            hitObjectRigidbody.rotation = (GetComponent<Rigidbody>().rotation * Quaternion.Euler(initialRotation));
                         hitObjectRigidbody.MovePosition(transform.position);
                     }
                 }
@@ -224,10 +226,10 @@ public class RayInteractor : MonoBehaviour
             case InteractionStates.REALEASED:
                 {
                     attachPoint.transform.DetachChildren();
-                    // hitObject.transform.parent = null;
-                    rotation = Vector3.zero;
+                    initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
                     hitObjectRigidbody.useGravity = true;
+                    hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
                     float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, currentPosition);
                     hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
                     hitObject = null;
@@ -235,7 +237,6 @@ public class RayInteractor : MonoBehaviour
                     zoom = 0;
                     interactionState = InteractionStates.NONE;
                     objectDisplacement = 0;
-                    // sw.Flush();
                 }
                 break;
             default:
