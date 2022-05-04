@@ -14,7 +14,6 @@ using TMPro;
 //
 public class RayInteractor : MonoBehaviour
 {
-
     LineRenderer lineRenderer;
     Canvas canvas;
     TextMeshProUGUI textDisplay;
@@ -47,18 +46,16 @@ public class RayInteractor : MonoBehaviour
     bool collided = false;
     Vector3 initialRotation;
     Quaternion initialRotationQ;
-    Quaternion initialRotationQController;
+    float hitObjectCenterToImpactDistance;
 
     public GameObject attachPoint;
-    public Vector3 currentPosition;
-    public Vector3 currentDirection;
+    public Vector3 handPosition;
+    public Vector3 handDirection;
     public float minZoomFactor = 0.01f;
     public float maxZoomFactor = 1.0f;
     public float minDistance = .10f;
-    public ForceMode forceMode;
-    public float velFactor;
+    public float distanceFactor;
     public float rotationSpeed;
-
 
     bool indexTrigger;
     bool gripButton;
@@ -71,10 +68,8 @@ public class RayInteractor : MonoBehaviour
 
     void Update()
     {
-
-
-        currentPosition = transform.position;
-        currentDirection = transform.TransformDirection(Vector3.forward);
+        handPosition = transform.position;
+        handDirection = transform.TransformDirection(Vector3.forward);
 
         if (tag.Equals("LeftHand"))
             deviceControls = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
@@ -91,7 +86,7 @@ public class RayInteractor : MonoBehaviour
 
 
         RaycastHit hitResult;
-        if (Physics.Raycast(currentPosition, currentDirection, out hitResult, drawDistance) && (indexTrigger | gripButton))
+        if (Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance) && (indexTrigger | gripButton))
         {
             if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
             {
@@ -108,17 +103,20 @@ public class RayInteractor : MonoBehaviour
                 hitObjectRigidbody.useGravity = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
-                initialRotationQController = GetComponent<Rigidbody>().rotation;
-                // initialRotation = Vector3.zero;
-                objectHitDistance = Vector3.Distance(hitObject.transform.position, currentPosition);
-                // hitObject.transform.parent = attachPoint.transform;
+                // initialHandRotationQ = GetComponent<Rigidbody>().rotation;
+                objectHitDistance = Vector3.Distance(hitObject.transform.position, handPosition);
+                hitObjectCenterToImpactDistance = objectHitDistance - hitResult.distance;
+
                 if (gripButton)
-                    hitObject.transform.position = transform.position;
+                {
+                    hitObject.transform.position = handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f);
+                    // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance ));
+                }
+                if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ) && !indexTrigger)
+                    hitObject.transform.parent = attachPoint.transform;
             }
         }
         else lineRenderer.startColor = Color.green;
-        Debug.DrawRay(currentPosition, currentDirection * drawDistance, Color.red);
-
 
         switch (interactionState)
         {
@@ -129,18 +127,15 @@ public class RayInteractor : MonoBehaviour
                         if (hitObjectRigidbody.constraints == (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                             break;
 
-                        Vector3 _rotation = Vector3.zero;
                         if (Mathf.Abs(axis.x) > .7f)
                         {
-                            _rotation.y = axis.x * -1f;
-                            hitObject.transform.Rotate(new Vector3(0, -1, 0) * axis.x * rotationSpeed * Time.fixedDeltaTime, Space.World);
+                            hitObject.transform.Rotate(transform.forward * -1 * axis.x * rotationSpeed * Time.deltaTime, Space.World);
                         }
                         if (Mathf.Abs(axis.y) > .7f)
                         {
-                            _rotation.x = axis.y;
-                            hitObject.transform.Rotate(new Vector3(1, 0, 0) * axis.y * rotationSpeed * Time.fixedDeltaTime, Space.World);
+                            hitObject.transform.Rotate(Vector3.Cross(transform.up, transform.forward) * axis.y * rotationSpeed * Time.deltaTime, Space.World);
                         }
-                        initialRotation += _rotation * rotationSpeed * Time.deltaTime;
+                        // initialRotation += _rotation * rotationSpeed * Time.deltaTime;
                     }
                 }
                 break;
@@ -186,8 +181,8 @@ public class RayInteractor : MonoBehaviour
         {
             case InteractionStates.HOLDING:
                 {
-                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, currentPosition);
-                    if (indexTrigger)
+                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
+                    if (indexTrigger && !gripButton)
                     {
                         if (primaryButton || secondaryButton)
                         {
@@ -211,14 +206,19 @@ public class RayInteractor : MonoBehaviour
                             objectDisplacement += zoom * zoom_factor * 1.2f;
                         }
 
-                        Vector3 newPostion = currentPosition + currentDirection * (objectHitDistance + objectDisplacement);
+                        Vector3 newPostion = handPosition + handDirection * (objectHitDistance + objectDisplacement);
                         hitObjectRigidbody.MovePosition(newPostion);
                     }
-                    else if (gripButton)
+                    else if (gripButton && !indexTrigger)
                     {
                         if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
-                            hitObjectRigidbody.rotation = (GetComponent<Rigidbody>().rotation * Quaternion.Euler(initialRotation));
-                        hitObjectRigidbody.MovePosition(transform.position);
+                        {
+                            // hitObject.transform.rotation = transform.rotation;
+                            // hitObjectRigidbody.rotation = (Quaternion.Euler(initialRotation));
+                        }
+
+                        // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f));
+                        // hitObjectRigidbody.MovePosition(handPosition + handDirection * hitObject.GetComponent<Collider>().bounds.size.magnitude);
                     }
                 }
                 break;
@@ -229,8 +229,10 @@ public class RayInteractor : MonoBehaviour
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
                     hitObjectRigidbody.useGravity = true;
+                    // hitObjectRigidbody.detectCollisions = true;
+
                     hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
-                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, currentPosition);
+                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
                     hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
                     hitObject = null;
                     hitObjectRigidbody = null;
