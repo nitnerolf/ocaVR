@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Lookat : MonoBehaviour
 {
-
+    public bool flipY;
     // Update is called once per frame
     void Update()
     {

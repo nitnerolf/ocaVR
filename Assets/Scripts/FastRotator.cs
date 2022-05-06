@@ -24,13 +24,22 @@ public class FastRotator : MonoBehaviour
     MeshData g_collisionMeshData;
     Mesh collisionMesh;
     MeshCollider meshCollider;
-
-    public SphereData sphereData;
+    Material material;
+    SphereData sphereData;
+    Shader quadraticLD;
+    Shader linearLD;
 
     Recorder updateRecorder;
     [Range(0.01f, 1f)] public float V;
     [Min(0)] public float radius;
     [Min(3)] public int sectorCount;
+    public float temperature;
+
+    [Range(0.01f, .99f)] public float u;
+    [Range(0.01f, .99f)] public float a;
+    [Range(0.01f, .99f)] public float b;
+    // If not set, Quadratic Limb Darkening will be used
+    public bool linearDarkening;
 
     FastRotator(int sectorCount, float initialVelocity, float radius)
     {
@@ -39,8 +48,25 @@ public class FastRotator : MonoBehaviour
         this.V = initialVelocity;
     }
 
+    void toggleShader()
+    {
+        if (linearDarkening && material.shader == quadraticLD)
+            material.shader = linearLD;
+        if (!linearDarkening && material.shader == linearLD)
+            material.shader = quadraticLD;
+
+    }
+
+    float prevRadius;
     void Start()
     {
+        prevRadius = temperature;
+
+        material = GetComponent<Renderer>().material;
+        quadraticLD = Shader.Find("Example/QuadraticLD");
+        linearLD = Shader.Find("Example/LinearLD");
+        toggleShader();
+
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
         meshCollider.cookingOptions = MeshColliderCookingOptions.UseFastMidphase;
@@ -56,33 +82,56 @@ public class FastRotator : MonoBehaviour
         collisionMesh.SetVertices(g_collisionMeshData.vertices);
         collisionMesh.SetIndices(g_collisionMeshData.indices, MeshTopology.Triangles, 0);
         meshCollider.sharedMesh = collisionMesh;
+
+        mesh.SetVertices(g_meshData.vertices);
+        mesh.SetIndices(g_meshData.indices, MeshTopology.Triangles, 0);
+        mesh.SetNormals(g_meshData.normals);
+        mesh.SetUVs(0, g_meshData.texCoords);
+        meshFilter.mesh = mesh;
     }
+
+
+
 
     void Update()
     {
-        sphereData = new SphereData();
-        sphereData.actualSectorCount = sectorCount;
-        sphereData.actualStackCount = sphereData.actualSectorCount + 1;
-        sphereData._ro = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
-        sphereData._y = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
+        Vector3 camToObjectDirection = (transform.position - Camera.main.transform.position).normalized;
 
-        sphereData.vertices = g_meshData.vertices;
-        sphereData.normals = g_meshData.normals;
-        sphereData.texCoords = g_meshData.texCoords;
+        material.SetColor("colorTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
+        material.SetVector("cameraLookDirection", camToObjectDirection);
+        material.SetFloat("u", u);
+        material.SetFloat("a", a);
+        material.SetFloat("b", b);
+        toggleShader();
 
-        int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
+        bool changed = (prevRadius != radius);
+        if (changed)
+        {
+            prevRadius = radius;
+            sphereData = new SphereData();
+            sphereData.actualSectorCount = sectorCount;
+            sphereData.actualStackCount = sphereData.actualSectorCount + 1;
+            sphereData._ro = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
+            sphereData._y = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
 
-        sphereData.radius = radius;
-        sphereData.V = V;
-        sphereData.Schedule().Complete();
+            sphereData.vertices = g_meshData.vertices;
+            sphereData.normals = g_meshData.normals;
+            sphereData.texCoords = g_meshData.texCoords;
 
-        mesh.SetVertices(sphereData.vertices);
-        mesh.SetIndices(g_meshData.indices, MeshTopology.Triangles, 0);
-        mesh.SetNormals(sphereData.normals);
-        mesh.SetUVs(0, sphereData.texCoords);
-        meshFilter.mesh = mesh;
-        sphereData._ro.Dispose();
-        sphereData._y.Dispose();
+            int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
+
+            sphereData.radius = radius;
+            sphereData.V = V;
+            sphereData.Schedule().Complete();
+
+            mesh.SetVertices(sphereData.vertices);
+            mesh.SetIndices(g_meshData.indices, MeshTopology.Triangles, 0);
+            mesh.SetNormals(sphereData.normals);
+            mesh.SetUVs(0, sphereData.texCoords);
+            meshFilter.mesh = mesh;
+            sphereData._ro.Dispose();
+            sphereData._y.Dispose();
+        }
     }
 
     void OnDestroy()
@@ -166,8 +215,8 @@ public class FastRotator : MonoBehaviour
         phi = 0;
 
         float x, y, z;
-        float nx, ny, nz, lengthInv = 1 / radius;
-        float s, t;
+        float nx, ny, nz;
+        float lengthInv = 1 / radius;
 
         for (int i = 0; i <= stackCount; i++)
         {
@@ -187,9 +236,9 @@ public class FastRotator : MonoBehaviour
                 nz = z * lengthInv;
                 meshData.normals[j + i * (stackCount)] = (new Vector3(nx, ny, nz));
 
-                s = j / sectorCount;
-                t = i / stackCount;
-                meshData.texCoords[j + i * (stackCount - 1)] = (new Vector2(s, t));
+                float s = (float)j / sectorCount;
+                float t = (float)i / stackCount;
+                meshData.texCoords[j + i * (stackCount)] = (new Vector2(s, t));
             }
         }
 
@@ -325,8 +374,8 @@ public class FastRotator : MonoBehaviour
                     nz = z * lengthInv;
                     normals[j + i * (actualStackCount)] = (new Vector3(nx, ny, nz));
 
-                    s = j / actualSectorCount;
-                    t = i / actualStackCount;
+                    s = (float)j / actualSectorCount;
+                    t = (float)i / actualStackCount;
                     texCoords[j + i * (actualStackCount)] = (new Vector2(s, t));
                 }
             }

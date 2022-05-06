@@ -56,7 +56,7 @@ namespace DimBoxes
 
         private Quaternion quat;
 
-       // private DimBoxes.DrawLines cameralines;
+        // private DimBoxes.DrawLines cameralines;
 
         protected LineRenderer[] lineList;
 
@@ -292,7 +292,7 @@ namespace DimBoxes
         public void SetLineRenderers()
         {
             Gradient colorGradient = new Gradient();
-            colorGradient.SetKeys(new GradientColorKey[] { new GradientColorKey(lineColor, 0.0f)},  new GradientAlphaKey[] { new GradientAlphaKey(lineColor.a, 0.0f) });
+            colorGradient.SetKeys(new GradientColorKey[] { new GradientColorKey(lineColor, 0.0f) }, new GradientAlphaKey[] { new GradientAlphaKey(lineColor.a, 0.0f) });
             foreach (LineRenderer lr in GetComponentsInChildren<LineRenderer>(true))
             {
                 lr.startWidth = lineWidth;
@@ -361,7 +361,7 @@ namespace DimBoxes
 
         void OnRenderObject()
         {
-            if (lines == null||!wire_renderer||!lineMaterial) return;
+            if (lines == null || !wire_renderer || !lineMaterial) return;
             lineMaterial.SetPass(0);
 
             GL.PushMatrix();
@@ -370,13 +370,13 @@ namespace DimBoxes
             GL.MultMatrix(transform.localToWorldMatrix);
             GL.Begin(GL.LINES);
 
-                GL.Color(wireColor);
-                for (int i = 0; i < lines.GetLength(0); i++)
-                {
-                    GL.Vertex(lines[i, 0]);
-                    GL.Vertex(lines[i, 1]);
-                }
- 
+            GL.Color(wireColor);
+            for (int i = 0; i < lines.GetLength(0); i++)
+            {
+                GL.Vertex(lines[i, 0]);
+                GL.Vertex(lines[i, 1]);
+            }
+
             GL.End();
             GL.PopMatrix();
         }

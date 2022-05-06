@@ -146,19 +146,9 @@ public class RayInteractor : MonoBehaviour
 
     void FixedUpdate()
     {
-
-
-        /////////////////////
-        // Left hand Raycast
-        /////////////////////
-
-
-
-
         ///////////////////////////////////
         // Interaction states management
         ///////////////////////////////////
-
 
         bool noPreviousInteracion = interactionState == InteractionStates.NONE;
         if ((indexTrigger | gripButton) && noPreviousInteracion && hitObject && !(isAlreadyHoldingObject))
