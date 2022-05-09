@@ -2,8 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using UnityEngine.XR;
 using TMPro;
 
@@ -12,6 +13,7 @@ using TMPro;
 // move along Z with A/B
 // rotate with joystick
 //
+
 public class RayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
@@ -39,23 +41,26 @@ public class RayInteractor : MonoBehaviour
 
     InputDevice deviceControls;
     float drawDistance = 100f;
-    float objectHitDistance = 0;
+    float objectHitDistanceAtCenter = 0;
     float objectDisplacement = 0;
     bool isAlreadyHoldingObject = false;
     GameObject hitObject = null;
     bool collided = false;
     Vector3 initialRotation;
+    Vector3 handPosition;
+    Vector3 handDirection;
     Quaternion initialRotationQ;
     float hitObjectCenterToImpactDistance;
 
+    // todo(ad): check if these are still revelant
+    float minZoomFactor = 0.01f;
+    float maxZoomFactor = 1.0f;
+    float minDistance = .20f;
+
     public GameObject attachPoint;
-    public Vector3 handPosition;
-    public Vector3 handDirection;
-    public float minZoomFactor = 0.01f;
-    public float maxZoomFactor = 1.0f;
-    public float minDistance = .10f;
     public float distanceFactor;
     public float rotationSpeed;
+    public LayerMask blockingMask;
 
     bool indexTrigger;
     bool gripButton;
@@ -84,28 +89,27 @@ public class RayInteractor : MonoBehaviour
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceVelocity, out controllerVelocity);
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceAcceleration, out controllerAccel);
 
-
         RaycastHit hitResult;
-        if (Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance) && (indexTrigger | gripButton))
+        bool hit = Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance, blockingMask);
+
+        if (hit && (indexTrigger | gripButton))
         {
             if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
             {
                 lineRenderer.startColor = Color.red;
                 // textDisplay.text = hitResult.transform.gameObject.name;
 
-                Vector3 hit_location = hitResult.transform.position;
+                Vector3 hitLocationAtCenter = hitResult.transform.position;
 
                 hitObject = hitResult.transform.gameObject;
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
-                // hitObjectRigidbody.detectCollisions = false;
                 hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 hitObjectRigidbody.isKinematic = true;
                 hitObjectRigidbody.useGravity = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
-                // initialHandRotationQ = GetComponent<Rigidbody>().rotation;
-                objectHitDistance = Vector3.Distance(hitObject.transform.position, handPosition);
-                hitObjectCenterToImpactDistance = objectHitDistance - hitResult.distance;
+                objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
+                hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
 
                 if (gripButton)
                 {
@@ -116,7 +120,10 @@ public class RayInteractor : MonoBehaviour
                     hitObject.transform.parent = attachPoint.transform;
             }
         }
-        else lineRenderer.startColor = Color.green;
+        else
+        {
+            lineRenderer.startColor = Color.green;
+        }
 
         switch (interactionState)
         {
@@ -196,7 +203,7 @@ public class RayInteractor : MonoBehaviour
                             objectDisplacement += zoom * zoom_factor * 1.2f;
                         }
 
-                        Vector3 newPostion = handPosition + handDirection * (objectHitDistance + objectDisplacement);
+                        Vector3 newPostion = handPosition + handDirection * (objectHitDistanceAtCenter + objectDisplacement);
                         hitObjectRigidbody.MovePosition(newPostion);
                     }
                     else if (gripButton && !indexTrigger)
