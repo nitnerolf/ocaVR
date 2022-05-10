@@ -10,6 +10,7 @@ public class Lookat : MonoBehaviour
     {
         Vector3 dir = Camera.main.transform.position - transform.position;
         dir.y = 0;
-        transform.rotation = Quaternion.LookRotation(dir);
+        if (dir != Vector3.zero)
+            transform.rotation = Quaternion.LookRotation(dir);
     }
 }

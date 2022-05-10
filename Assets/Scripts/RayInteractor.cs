@@ -90,9 +90,10 @@ public class RayInteractor : MonoBehaviour
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceAcceleration, out controllerAccel);
 
         RaycastHit hitResult;
+        bool uiHit = EventSystem.current.IsPointerOverGameObject();
         bool hit = Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance, blockingMask);
 
-        if (hit && (indexTrigger | gripButton))
+        if (hit && (indexTrigger | gripButton) )
         {
             if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
             {

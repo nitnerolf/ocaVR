@@ -33,8 +33,8 @@ public class FastRotator : MonoBehaviour
     [Range(0.01f, 1f)] public float V;
     [Min(0)] public float radius;
     [Min(3)] public int sectorCount;
-    public float temperature;
 
+    [Range(1000f, 10000f)] public float temperature;
     [Range(0.01f, .99f)] public float u;
     [Range(0.01f, .99f)] public float a;
     [Range(0.01f, .99f)] public float b;
