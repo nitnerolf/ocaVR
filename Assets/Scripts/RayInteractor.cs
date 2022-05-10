@@ -24,17 +24,14 @@ public class RayInteractor : MonoBehaviour
     FileStream fs;
     StreamWriter sw;
 
-    void Start()
-    {
-        lineRenderer = GetComponent<LineRenderer>();
-        // canvas = left_hand.transform.GetComponentInChildren<Canvas>();
-        // textDisplay = canvas.transform.Find("TextDisplay").GetComponent<TextMeshProUGUI>();
-    }
 
     enum InteractionStates
     {
+        START,
         REALEASED,
         HOLDING,
+        HOVERING,
+        END,
         NONE
     };
     InteractionStates interactionState = InteractionStates.NONE;
@@ -46,6 +43,7 @@ public class RayInteractor : MonoBehaviour
     bool isAlreadyHoldingObject = false;
     GameObject hitObject = null;
     bool collided = false;
+    Vector3 hitLocation;
     Vector3 initialRotation;
     Vector3 handPosition;
     Vector3 handDirection;
@@ -53,14 +51,15 @@ public class RayInteractor : MonoBehaviour
     float hitObjectCenterToImpactDistance;
 
     // todo(ad): check if these are still revelant
-    float minZoomFactor = 0.01f;
-    float maxZoomFactor = 1.0f;
-    float minDistance = .20f;
-
     public GameObject attachPoint;
-    public float distanceFactor;
-    public float rotationSpeed;
     public LayerMask blockingMask;
+    [Space]
+    public float minZoomFactor = 0.01f;
+    public float maxZoomFactor = 1.0f;
+    public float minDistance = .10f;
+    public AnimationCurve zoomFactorAttenuation;
+    [Space]
+    public float rotationSpeed;
 
     bool indexTrigger;
     bool gripButton;
@@ -70,6 +69,14 @@ public class RayInteractor : MonoBehaviour
     Vector2 axis;
     Vector3 controllerVelocity;
     Vector3 controllerAccel;
+
+    void Start()
+    {
+        lineRenderer = GetComponent<LineRenderer>();
+        // canvas = left_hand.transform.GetComponentInChildren<Canvas>();
+        // textDisplay = canvas.transform.Find("TextDisplay").GetComponent<TextMeshProUGUI>();
+
+    }
 
     void Update()
     {
@@ -90,10 +97,19 @@ public class RayInteractor : MonoBehaviour
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceAcceleration, out controllerAccel);
 
         RaycastHit hitResult;
-        bool uiHit = EventSystem.current.IsPointerOverGameObject();
         bool hit = Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance, blockingMask);
 
-        if (hit && (indexTrigger | gripButton) )
+        if (hit)
+        {
+            lineRenderer.SetPosition(1, Vector3.forward * hitResult.distance);
+            lineRenderer.startColor = Color.white;
+        }
+        else
+        {
+            lineRenderer.SetPosition(1, Vector3.forward * drawDistance);
+        }
+
+        if (hit && (indexTrigger | gripButton))
         {
             if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
             {
@@ -101,6 +117,7 @@ public class RayInteractor : MonoBehaviour
                 // textDisplay.text = hitResult.transform.gameObject.name;
 
                 Vector3 hitLocationAtCenter = hitResult.transform.position;
+                objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
 
                 hitObject = hitResult.transform.gameObject;
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
@@ -109,8 +126,8 @@ public class RayInteractor : MonoBehaviour
                 hitObjectRigidbody.useGravity = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
-                objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
-                hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
+                // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
+                hitObjectCenterToImpactDistance = Vector3.Distance(hitLocationAtCenter, hitResult.point);
 
                 if (gripButton)
                 {
@@ -124,6 +141,24 @@ public class RayInteractor : MonoBehaviour
         else
         {
             lineRenderer.startColor = Color.green;
+        }
+
+
+
+        ///////////////////////////////////
+        // Interaction states management
+        ///////////////////////////////////
+
+        bool noPreviousInteracion = interactionState == InteractionStates.NONE;
+        if ((indexTrigger | gripButton) && noPreviousInteracion && hitObject && !(isAlreadyHoldingObject))
+        {
+            interactionState = InteractionStates.HOLDING;
+            isAlreadyHoldingObject = true;
+        }
+        else if ((indexTrigger | gripButton) == false && interactionState == InteractionStates.HOLDING)
+        {
+            interactionState = InteractionStates.REALEASED;
+            isAlreadyHoldingObject = false;
         }
 
         switch (interactionState)
@@ -154,58 +189,38 @@ public class RayInteractor : MonoBehaviour
 
     void FixedUpdate()
     {
-        ///////////////////////////////////
-        // Interaction states management
-        ///////////////////////////////////
-
-        bool noPreviousInteracion = interactionState == InteractionStates.NONE;
-        if ((indexTrigger | gripButton) && noPreviousInteracion && hitObject && !(isAlreadyHoldingObject))
-        {
-            interactionState = InteractionStates.HOLDING;
-            isAlreadyHoldingObject = true;
-        }
-        else if ((indexTrigger | gripButton) == false && interactionState == InteractionStates.HOLDING)
-        {
-            interactionState = InteractionStates.REALEASED;
-            isAlreadyHoldingObject = false;
-        }
-
-
-
-
-
         float zoom = 0;
         switch (interactionState)
         {
             case InteractionStates.HOLDING:
                 {
-                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
+                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition) - hitObjectCenterToImpactDistance;
                     if (indexTrigger && !gripButton)
                     {
                         if (primaryButton || secondaryButton)
                         {
-                            if ((currentDistanceToObject >= minDistance) && primaryButton)
+                            if (((currentDistanceToObject) >= minDistance) && primaryButton)
                             {
-                                zoom = (-1 * Time.deltaTime * 1.1f);
+                                zoom = (-1 * Time.deltaTime);
                             }
                             else if (secondaryButton)
                             {
-                                zoom = (1 * Time.deltaTime * 1.1f);
+                                zoom = (1 * Time.deltaTime);
                             }
 
-                            float zoom_factor = ((currentDistanceToObject - minDistance) / (.5f - minDistance));
-
+                            float zoom_factor = ((currentDistanceToObject - minDistance) / (minDistance));
                             if (zoom_factor < minZoomFactor) zoom_factor = minZoomFactor;
                             else if (zoom_factor > maxZoomFactor) zoom_factor = maxZoomFactor;
 
                             if (collided && primaryButton)
                                 zoom = 0;
 
-                            objectDisplacement += zoom * zoom_factor * 1.2f;
+                            objectDisplacement += zoom * zoom_factor * zoomFactorAttenuation.Evaluate(zoom_factor / maxZoomFactor);
                         }
 
                         Vector3 newPostion = handPosition + handDirection * (objectHitDistanceAtCenter + objectDisplacement);
                         hitObjectRigidbody.MovePosition(newPostion);
+                        hitObjectRigidbody.MoveRotation(transform.rotation);
                     }
                     else if (gripButton && !indexTrigger)
                     {

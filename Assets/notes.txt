@@ -11,3 +11,8 @@ Joystick: rotate
 A - B buttons: move
 Middle trigger: pick up
 
+Remarks:
+
+Raycast going through UI element;
+- this is a common issue due to the way Unity designed the EventSystem.
+  Fix: an easy fix is to just add a box collider behind the UI element which will block the raycast
