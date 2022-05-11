@@ -49,6 +49,7 @@ public class RayInteractor : MonoBehaviour
     Vector3 handDirection;
     Quaternion initialRotationQ;
     float hitObjectCenterToImpactDistance;
+    float zoom = 0;
 
     // todo(ad): check if these are still revelant
     public GameObject attachPoint;
@@ -134,7 +135,7 @@ public class RayInteractor : MonoBehaviour
                     hitObject.transform.position = handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f);
                     // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance ));
                 }
-                if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ) && !indexTrigger)
+                if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                     hitObject.transform.parent = attachPoint.transform;
             }
         }
@@ -183,13 +184,29 @@ public class RayInteractor : MonoBehaviour
                 }
                 break;
 
+            case InteractionStates.REALEASED:
+                {
+                    attachPoint.transform.DetachChildren();
+                    initialRotation = Vector3.zero;
+                    hitObjectRigidbody.isKinematic = false;
+                    hitObjectRigidbody.useGravity = true;
+                    // hitObjectRigidbody.detectCollisions = true;
+
+                    hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
+                    hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
+                    hitObject = null;
+                    hitObjectRigidbody = null;
+                    interactionState = InteractionStates.NONE;
+                    objectDisplacement = 0;
+                }
+                break;
             default: break;
         }
     }
 
     void FixedUpdate()
     {
-        float zoom = 0;
         switch (interactionState)
         {
             case InteractionStates.HOLDING:
@@ -210,7 +227,8 @@ public class RayInteractor : MonoBehaviour
 
                             float zoom_factor = ((currentDistanceToObject - minDistance) / (minDistance));
                             if (zoom_factor < minZoomFactor) zoom_factor = minZoomFactor;
-                            else if (zoom_factor > maxZoomFactor) zoom_factor = maxZoomFactor;
+
+                            if (zoom_factor > maxZoomFactor) zoom_factor = maxZoomFactor;
 
                             if (collided && primaryButton)
                                 zoom = 0;
@@ -220,38 +238,7 @@ public class RayInteractor : MonoBehaviour
 
                         Vector3 newPostion = handPosition + handDirection * (objectHitDistanceAtCenter + objectDisplacement);
                         hitObjectRigidbody.MovePosition(newPostion);
-                        hitObjectRigidbody.MoveRotation(transform.rotation);
                     }
-                    else if (gripButton && !indexTrigger)
-                    {
-                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
-                        {
-                            // hitObject.transform.rotation = transform.rotation;
-                            // hitObjectRigidbody.rotation = (Quaternion.Euler(initialRotation));
-                        }
-
-                        // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f));
-                        // hitObjectRigidbody.MovePosition(handPosition + handDirection * hitObject.GetComponent<Collider>().bounds.size.magnitude);
-                    }
-                }
-                break;
-
-            case InteractionStates.REALEASED:
-                {
-                    attachPoint.transform.DetachChildren();
-                    initialRotation = Vector3.zero;
-                    hitObjectRigidbody.isKinematic = false;
-                    hitObjectRigidbody.useGravity = true;
-                    // hitObjectRigidbody.detectCollisions = true;
-
-                    hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
-                    float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
-                    hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
-                    hitObject = null;
-                    hitObjectRigidbody = null;
-                    zoom = 0;
-                    interactionState = InteractionStates.NONE;
-                    objectDisplacement = 0;
                 }
                 break;
             default:
