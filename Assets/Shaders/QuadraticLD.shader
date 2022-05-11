@@ -60,8 +60,8 @@ Shader "Example/QuadraticLD"
 
             half4 frag(VertexOutputs OUT) : SV_Target
             {
-                float theta = dot(cameraLookDirection * -1, OUT.normal);
-                half4 color= colorTemperature * (1-a*(1-theta) - b*pow(1-theta, 2));
+                float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
+                half4 color= colorTemperature * (1-a*(1-abs(cosTheta)) - b*pow(1-abs(cosTheta), 2));
 
                 return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * color;
 

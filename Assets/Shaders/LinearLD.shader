@@ -60,8 +60,8 @@ Shader "Example/LinearLD"
 
             half4 frag(VertexOutputs OUT) : SV_Target
             {
-                float theta = dot(cameraLookDirection * -1, OUT.normal);
-                half4 color = colorTemperature * (1-u*(1-theta));
+                float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
+                half4 color = colorTemperature * (1-u*(1-abs(cosTheta)));
 
                 return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * color;
 
