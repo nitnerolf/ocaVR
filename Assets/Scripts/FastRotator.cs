@@ -6,8 +6,47 @@ using Unity.Jobs;
 using Unity.Burst;
 using UnityEngine.Profiling;
 
+using UnityEditor;
+using System;
+using System.Reflection;
+
+public enum ocaEElementType
+{
+    Label,
+    Toggle,
+    Slider,
+}
+
+
+
+[Serializable]
+public class ocaParameterDescription
+{
+    public ocaEElementType UIElement;
+    public string propertyName;
+}
+
+public class ocaInteractableBehaviour : MonoBehaviour
+{
+    public object GetValueByPropertyName(string propertyName)
+    {
+        if (!string.IsNullOrEmpty(propertyName))
+            char.ToLower(propertyName[0]);
+
+        if (this.GetType().GetField(propertyName) == null)
+        {
+            Debug.Log("propertyName is empty or invalid");
+            return null;
+        }
+
+        return this.GetType().GetField(propertyName).GetValue(this);
+    }
+
+    [ReadOnly] public List<ocaParameterDescription> UIParamaterMap;
+}
+
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
-public class FastRotator : MonoBehaviour
+public class FastRotator : ocaInteractableBehaviour
 {
     public class MeshData
     {
@@ -34,7 +73,7 @@ public class FastRotator : MonoBehaviour
     [Min(0)] public float radius;
     [Min(3)] public int sectorCount;
 
-    [Range(1000f, 10000f)] public float temperature;
+    [Range(0, 10000)] public float temperature;
     [Range(0.01f, .99f)] public float u;
     [Range(0.01f, .99f)] public float a;
     [Range(0.01f, .99f)] public float b;
@@ -61,7 +100,6 @@ public class FastRotator : MonoBehaviour
     void Start()
     {
         prevRadius = temperature;
-
         material = GetComponent<Renderer>().material;
         quadraticLD = Shader.Find("Example/QuadraticLD");
         linearLD = Shader.Find("Example/LinearLD");
@@ -88,6 +126,12 @@ public class FastRotator : MonoBehaviour
         mesh.SetNormals(g_meshData.normals);
         mesh.SetUVs(0, g_meshData.texCoords);
         meshFilter.mesh = mesh;
+
+        // print(this.GetType().GetField("V") + ": " + this.GetType().GetField("V").GetValue(this));
+        // print(this.GetType().GetField("radius") + ": " + this.GetType().GetField("radius").GetValue(this));
+        // print(this.GetType().GetField("temperature") + ": " + this.GetType().GetField("temperature").GetValue(this));
+        // print(this.GetType().GetField("linearDarkening") + ": " + this.GetType().GetField("linearDarkening").GetValue(this));
+
     }
 
 
@@ -278,6 +322,8 @@ public class FastRotator : MonoBehaviour
 
         return meshData;
     }
+
+
 
 
 

@@ -17,9 +17,6 @@ using TMPro;
 public class RayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
-    Canvas canvas;
-    TextMeshProUGUI textDisplay;
-    Rigidbody hitObjectRigidbody;
 
     FileStream fs;
     StreamWriter sw;
@@ -37,21 +34,32 @@ public class RayInteractor : MonoBehaviour
     InteractionStates interactionState = InteractionStates.NONE;
 
     InputDevice deviceControls;
+
+    bool indexTrigger;
+    bool gripButton;
+    bool primaryButton;
+    bool secondaryButton;
+
+    Vector2 axis;
+    Vector3 controllerVelocity;
+    Vector3 controllerAccel;
+
     float drawDistance = 100f;
     float objectHitDistanceAtCenter = 0;
     float objectDisplacement = 0;
-    bool isAlreadyHoldingObject = false;
-    GameObject hitObject = null;
-    bool collided = false;
-    Vector3 hitLocation;
-    Vector3 initialRotation;
-    Vector3 handPosition;
-    Vector3 handDirection;
-    Quaternion initialRotationQ;
     float hitObjectCenterToImpactDistance;
     float zoom = 0;
+    bool collided = false;
+    bool isAlreadyHoldingObject = false;
 
-    // todo(ad): check if these are still revelant
+    GameObject hitObject = null;
+    Rigidbody hitObjectRigidbody = null;
+    Vector3 hitLocation = Vector3.zero;
+    Vector3 initialRotation = Vector3.zero;
+    Vector3 handPosition = Vector3.zero;
+    Vector3 handDirection = Vector3.zero;
+    Quaternion initialRotationQ = Quaternion.identity;
+
     public GameObject attachPoint;
     public LayerMask blockingMask;
     [Space]
@@ -62,14 +70,7 @@ public class RayInteractor : MonoBehaviour
     [Space]
     public float rotationSpeed;
 
-    bool indexTrigger;
-    bool gripButton;
-    bool primaryButton;
-    bool secondaryButton;
 
-    Vector2 axis;
-    Vector3 controllerVelocity;
-    Vector3 controllerAccel;
 
     void Start()
     {
@@ -137,6 +138,12 @@ public class RayInteractor : MonoBehaviour
                 }
                 if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                     hitObject.transform.parent = attachPoint.transform;
+
+                if (hitObject.GetComponent<ocaInteractableBehaviour>() != null)
+                {
+                    GetComponent<ocaHUD>().selection = hitObject.GetComponent<ocaInteractableBehaviour>();
+                    GetComponent<ocaHUD>().OnSelect();
+                }
             }
         }
         else
@@ -199,6 +206,7 @@ public class RayInteractor : MonoBehaviour
                     hitObjectRigidbody = null;
                     interactionState = InteractionStates.NONE;
                     objectDisplacement = 0;
+                    GetComponent<ocaHUD>().OnDeselect();
                 }
                 break;
             default: break;
