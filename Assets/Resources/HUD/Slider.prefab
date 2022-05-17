@@ -243,7 +243,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -254,8 +254,8 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_SelectedColor: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
+    m_DisabledColor: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -270,7 +270,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 7840952729592363160}
+  m_TargetGraphic: {fileID: 1059431654838729574}
   m_FillRect: {fileID: 361897964343241147}
   m_HandleRect: {fileID: 0}
   m_Direction: 0
@@ -358,12 +358,12 @@ PrefabInstance:
     - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_fontSize
-      value: 12
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_fontSizeMax
-      value: 12
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
@@ -418,7 +418,7 @@ PrefabInstance:
     - target: {fileID: 7376578174619106329, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 100
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 7376578174619106329, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}

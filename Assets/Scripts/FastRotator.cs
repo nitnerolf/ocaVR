@@ -20,7 +20,7 @@ public enum ElementType
 [Serializable]
 public class GuiElementDescriptor
 {
-    public ElementType UIElementType;
+    public ElementType elementType;
     public string fieldName;
 
     // <summary>
@@ -28,25 +28,45 @@ public class GuiElementDescriptor
     // <summary>
     public GuiElementDescriptor(ElementType type, string exactFieldName)
     {
-        this.UIElementType = type;
+        this.elementType = type;
         this.fieldName = exactFieldName;
     }
 }
 
 public class ocaInteractableBehaviour : MonoBehaviour
 {
-    public object GetValueByPropertyName(string fieldName)
+    private bool IsValidFieldName(string fieldName)
     {
-        if (!string.IsNullOrEmpty(fieldName))
-            char.ToLower(fieldName[0]);
+        if (string.IsNullOrEmpty(fieldName) || string.IsNullOrWhiteSpace(fieldName))
+        {
+            Debug.LogError("FieldName is empty or invalid");
+            return false;
+        }
 
         if (this.GetType().GetField(fieldName) == null)
         {
-            Debug.LogError("fieldName is empty or invalid");
-            return null;
+            Debug.LogError("Cannot find field named '" + fieldName + "'");
+            return false;
         }
 
+        return true;
+    }
+
+    public object GetValueByFieldName(string fieldName)
+    {
+
+        if (!IsValidFieldName(fieldName))
+            return null;
+
         return this.GetType().GetField(fieldName).GetValue(this);
+    }
+
+    public FieldInfo GetFieldByName(string fieldName)
+    {
+        if (!IsValidFieldName(fieldName))
+            return null;
+
+        return this.GetType().GetField(fieldName);
     }
 
     // maps fields to ui elements

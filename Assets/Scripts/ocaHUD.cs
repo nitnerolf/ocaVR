@@ -13,21 +13,21 @@ public class ocaHUD : MonoBehaviour
 
     string prefabAssetsPath = "HUD/";
 
-    GameObject prefabHUD;
+    GameObject prefabHUDCanvas;
     GameObject prefabLabel;
     GameObject prefabToggle;
     GameObject prefabSlider;
 
     GameObject HUDInstance;
-    TextMeshProUGUI HUD_title;
-
+    TextMeshProUGUI HUDTitle;
     // todo(adlan): expose to inspector?
     Transform parent;
 
-    Dictionary<string, GameObject> UIElements;
+
 
     [HideInInspector]
-    public ocaInteractableBehaviour selection;
+    public ocaInteractableBehaviour target;
+
 
     public class ElementBlueprint
     {
@@ -37,6 +37,7 @@ public class ocaHUD : MonoBehaviour
         // todo(adlan): These Action signatures are long and redundant, find a way to make this syntax shorter for readability
         public Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>,
             Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>>> initFunction;
+
         public Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction;
 
         public ElementBlueprint(
@@ -54,10 +55,11 @@ public class ocaHUD : MonoBehaviour
     }
 
     List<ElementBlueprint> elementBlueprints;
+    Dictionary<string, GameObject> elementInstances;
 
     void Start()
     {
-        prefabHUD = Resources.Load<GameObject>(prefabAssetsPath + "HUD_Canvas");
+        prefabHUDCanvas = Resources.Load<GameObject>(prefabAssetsPath + "HUDCanvas");
 
         // todo(adlan): We must eventually load these into a hash table
         // effectively avoiding to load these one by one and make the process more streamlined
@@ -66,12 +68,12 @@ public class ocaHUD : MonoBehaviour
         prefabToggle = Resources.Load<GameObject>(prefabAssetsPath + "Toggle");
         prefabSlider = Resources.Load<GameObject>(prefabAssetsPath + "Slider");
 
-        HUDInstance = Instantiate<GameObject>(prefabHUD, transform);
+        HUDInstance = Instantiate<GameObject>(prefabHUDCanvas, transform);
         HUDInstance.transform.position += positionOffset;
         HUDInstance.GetComponent<Canvas>().worldCamera = Camera.main;
         parent = HUDInstance.transform.Find("Panel").transform;
-        HUD_title = parent.transform.Find("Label").GetComponent<TextMeshProUGUI>();
-        HUD_title.text = string.Empty;
+        HUDTitle = parent.transform.Find("Title").GetComponent<TextMeshProUGUI>();
+        HUDTitle.text = string.Empty;
 
         HUDInstance.SetActive(false);
 
@@ -79,53 +81,50 @@ public class ocaHUD : MonoBehaviour
         if (prefabToggle == null) Debug.LogError("failed to load Toggle prefab");
         if (prefabSlider == null) Debug.LogError("failed to load Slider prefab");
 
-        UIElements = new Dictionary<string, GameObject>();
-        selection = null;
+        elementInstances = new Dictionary<string, GameObject>();
+        target = null;
 
         elementBlueprints = new List<ElementBlueprint> {
-            {new ElementBlueprint("Label" /*Component Name*/, prefabLabel, null, null)},
+            {new ElementBlueprint("Label" /*Component Name*/, prefabLabel, InitLabel, null)},
             {new ElementBlueprint("Slider" /*Component Name*/, prefabSlider, InitSlider, UpdateSlider)},
             {new ElementBlueprint("Toggle" /*Component Name*/, prefabToggle, InitToggle, UpdateToggle)},
         };
     }
 
-    void Update()
-    {
-
-    }
-
     public void OnSelect()
     {
-        Debug.Assert(UIElements.Count == 0, "UIElements.Count is not empty");
+        Debug.Assert(elementInstances.Count == 0, "elementInstances is not empty");
         HUDInstance.SetActive(true);
 
-        foreach (var p in selection.guiElementsDescriptor)
+        foreach (var p in target.guiElementsDescriptor)
         {
-            HUD_title.text = selection.transform.name;
+            HUDTitle.text = target.transform.name;
 
-            Debug.Assert(!UIElements.ContainsKey(p.fieldName), "Property Name must be unique");
+            Debug.Assert(!elementInstances.ContainsKey(p.fieldName), "Property Name must be unique");
             Debug.Assert(!string.IsNullOrEmpty(p.fieldName), "Property Name must not be an empty string and must be a valid property");
 
-            ElementBlueprint type = elementBlueprints.Find(x => x.name.Contains(p.UIElementType.ToString()));
+            ElementBlueprint type = elementBlueprints.Find(x => x.name.Contains(p.elementType.ToString()));
             GameObject temp = Instantiate<GameObject>(type.prefab, parent);
-            UIElements.Add(p.fieldName, temp);
+            elementInstances.Add(p.fieldName, temp);
 
-            type.initFunction(p.fieldName, selection, UIElements, type.updateFunction);
+            type.initFunction(p.fieldName, target, elementInstances, type.updateFunction);
         }
     }
 
     public void OnDeselect()
     {
-        UIElements.Clear();
-        selection = null;
+        elementInstances.Clear();
+        target = null;
+        Transform TitleElement = parent.transform.Find("Title");
 
         for (int i = 0; i < parent.transform.childCount; i++)
         {
-            if (parent.transform.GetChild(i).transform.name != "Label")
-                Destroy(parent.transform.GetChild(i).gameObject);
+            Transform child = parent.transform.GetChild(i);
+            if (!child.Equals(TitleElement) && !child.CompareTag("Spacer"))
+                Destroy(child.gameObject);
         }
 
-        HUD_title.text = "";
+        HUDTitle.text = string.Empty;
         HUDInstance.SetActive(false);
     }
 
@@ -141,24 +140,40 @@ public class ocaHUD : MonoBehaviour
     // preventing unexpected state changes
     // i.e these functions cannot access global class variables and thus are self contained
 
-    static void InitSlider(string fieldName, ocaInteractableBehaviour selection, Dictionary<string, GameObject> UIElements, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
-    {
-        /*!Important*/ Slider sliderComponent = UIElements[fieldName].GetComponent<Slider>();
-        /*!Important*/ sliderComponent.onValueChanged.AddListener(delegate { UpdateSlider(fieldName, selection, UIElements); });
+    // 'elementInstances' holds references to the actual UI elements that were instanciated for the given properties.
+    // The idea is to get access to the elementInstances[<key>].<value> and set the relevent data for the UI component you're working with
 
-        object o = selection.GetValueByPropertyName(fieldName);
+    private void InitLabel(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
+    {
+        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = (string)target.GetValueByFieldName(fieldName);
+        // target.GetFieldByName(fieldName).
+    }
+
+    private void UpdateLabel(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
+    {
+        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = (string)target.GetValueByFieldName(fieldName);
+    }
+
+    static void InitSlider(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
+    {
+        /*!Important*/
+        Slider sliderComponent = elementInstances[fieldName].GetComponent<Slider>();
+        /*!Important*/
+        sliderComponent.onValueChanged.AddListener(delegate { UpdateSlider(fieldName, target, elementInstances); });
+
+        object o = target.GetValueByFieldName(fieldName);
         if (o == null)
             return;
 
-        if (Attribute.IsDefined(selection.GetType().GetField(fieldName), typeof(RangeAttribute)))
+        if (Attribute.IsDefined(target.GetType().GetField(fieldName), typeof(RangeAttribute)))
         {
-            RangeAttribute attr = (RangeAttribute)System.Attribute.GetCustomAttribute(selection.GetType().GetField(fieldName), typeof(RangeAttribute));
+            RangeAttribute attr = (RangeAttribute)System.Attribute.GetCustomAttribute(target.GetType().GetField(fieldName), typeof(RangeAttribute));
             sliderComponent.minValue = attr.min;
             sliderComponent.maxValue = attr.max;
         }
-        else if (Attribute.IsDefined(selection.GetType().GetField(fieldName), typeof(MinAttribute)))
+        else if (Attribute.IsDefined(target.GetType().GetField(fieldName), typeof(MinAttribute)))
         {
-            MinAttribute attr = (MinAttribute)System.Attribute.GetCustomAttribute(selection.GetType().GetField(fieldName), typeof(MinAttribute));
+            MinAttribute attr = (MinAttribute)System.Attribute.GetCustomAttribute(target.GetType().GetField(fieldName), typeof(MinAttribute));
             sliderComponent.minValue = attr.min;
         }
 
@@ -167,19 +182,23 @@ public class ocaHUD : MonoBehaviour
         sliderComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName + ": " + (float)o;
     }
 
-    static void UpdateSlider(string fieldName, ocaInteractableBehaviour selection, Dictionary<string, GameObject> UIElements)
+    static void UpdateSlider(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
     {
-        /*!Important*/ Slider sliderComponent = UIElements[fieldName].GetComponent<Slider>();
-        /*!Important*/ selection.GetType().GetField(fieldName).SetValue(selection, (float)sliderComponent.value);
+        /*!Important*/
+        Slider sliderComponent = elementInstances[fieldName].GetComponent<Slider>();
+        /*!Important*/
+        target.GetType().GetField(fieldName).SetValue(target, (float)sliderComponent.value);
         sliderComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName + ": " + (float)sliderComponent.value;
     }
 
-    static void InitToggle(string fieldName, ocaInteractableBehaviour selection, Dictionary<string, GameObject> UIElements, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
+    static void InitToggle(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
     {
-        /*!Important*/ Toggle toggleComponent = UIElements[fieldName].GetComponent<Toggle>();
-        /*!Important*/ toggleComponent.onValueChanged.AddListener(delegate { UpdateToggle(fieldName, selection, UIElements); });
+        /*!Important*/
+        Toggle toggleComponent = elementInstances[fieldName].GetComponent<Toggle>();
+        /*!Important*/
+        toggleComponent.onValueChanged.AddListener(delegate { UpdateToggle(fieldName, target, elementInstances); });
 
-        object o = selection.GetValueByPropertyName(fieldName);
+        object o = target.GetValueByFieldName(fieldName);
         if (o == null)
             return;
 
@@ -187,9 +206,9 @@ public class ocaHUD : MonoBehaviour
         toggleComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName;
     }
 
-    static void UpdateToggle(string fieldName, ocaInteractableBehaviour selection, Dictionary<string, GameObject> UIElements)
+    static void UpdateToggle(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
     {
-        Toggle toggleComponent = UIElements[fieldName].GetComponent<Toggle>();
-        selection.GetType().GetField(fieldName).SetValue(selection, (bool)toggleComponent.isOn);
+        Toggle toggleComponent = elementInstances[fieldName].GetComponent<Toggle>();
+        target.GetType().GetField(fieldName).SetValue(target, (bool)toggleComponent.isOn);
     }
 }

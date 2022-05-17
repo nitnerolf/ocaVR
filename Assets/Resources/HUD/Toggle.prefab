@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -271,7 +271,7 @@ PrefabInstance:
     - target: {fileID: 540810521953233397, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_Name
-      value: Label
+      value: Title
       objectReference: {fileID: 0}
     - target: {fileID: 7376578174619106329, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}

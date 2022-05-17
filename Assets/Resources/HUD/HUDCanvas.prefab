@@ -121,7 +121,7 @@ GameObject:
   - component: {fileID: 564243933234043925}
   - component: {fileID: 564243933234043926}
   m_Layer: 5
-  m_Name: HUD_Canvas
+  m_Name: HUDCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -395,12 +395,17 @@ PrefabInstance:
     - target: {fileID: 540810521953233397, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_Name
-      value: Label
+      value: Title
       objectReference: {fileID: 0}
     - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}
       propertyPath: m_fontSize
       value: 8.95
+      objectReference: {fileID: 0}
+    - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
+        type: 3}
+      propertyPath: m_fontSizeMax
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 880461532728185513, guid: 9eb24a2adff81a24385946bad5add289,
         type: 3}

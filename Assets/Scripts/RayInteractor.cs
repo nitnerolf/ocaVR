@@ -75,9 +75,6 @@ public class RayInteractor : MonoBehaviour
     void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
-        // canvas = left_hand.transform.GetComponentInChildren<Canvas>();
-        // textDisplay = canvas.transform.Find("TextDisplay").GetComponent<TextMeshProUGUI>();
-
     }
 
     void Update()
@@ -104,6 +101,8 @@ public class RayInteractor : MonoBehaviour
         if (hit)
         {
             lineRenderer.SetPosition(1, Vector3.forward * hitResult.distance);
+            lineRenderer.endWidth = .001f;
+            if (!(indexTrigger | gripButton))
             lineRenderer.startColor = Color.white;
         }
         else
@@ -141,7 +140,7 @@ public class RayInteractor : MonoBehaviour
 
                 if (hitObject.GetComponent<ocaInteractableBehaviour>() != null)
                 {
-                    GetComponent<ocaHUD>().selection = hitObject.GetComponent<ocaInteractableBehaviour>();
+                    GetComponent<ocaHUD>().target = hitObject.GetComponent<ocaInteractableBehaviour>();
                     GetComponent<ocaHUD>().OnSelect();
                 }
             }
