@@ -23,7 +23,6 @@ public class GuiElementDescriptor
     public ElementType elementType;
     public string fieldName;
     public string displayName;
-
     // <summary>
     // Provide fieldName as is, otherwise the reflection system will not be able to find it
     // <summary>
@@ -35,8 +34,12 @@ public class GuiElementDescriptor
     }
 }
 
-public class ocaInteractableBehaviour : MonoBehaviour
+public class OcaInteractable : MonoBehaviour
 {
+    // maps fields to ui elements
+    [HideInInspector]
+    public List<GuiElementDescriptor> guiElementsDescriptor;
+
     private bool IsValidFieldName(string fieldName)
     {
         if (string.IsNullOrEmpty(fieldName) || string.IsNullOrWhiteSpace(fieldName))
@@ -71,14 +74,6 @@ public class ocaInteractableBehaviour : MonoBehaviour
         return this.GetType().GetField(fieldName);
     }
 
-    // maps fields to ui elements
-    [HideInInspector]
-    public List<GuiElementDescriptor> guiElementsDescriptor;
-
-    public ocaInteractableBehaviour()
-    {
-        guiElementsDescriptor = new List<GuiElementDescriptor>();
-    }
 }
 
 
@@ -88,7 +83,7 @@ public class ocaInteractableBehaviour : MonoBehaviour
 
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
-public class FastRotator : ocaInteractableBehaviour
+public class FastRotator : OcaInteractable
 {
     [Range(1.01f, 10f)] public float velocity;
     [Range(.1f, 10f)] public float radius;
@@ -100,7 +95,6 @@ public class FastRotator : ocaInteractableBehaviour
     // If not set, Quadratic Limb Darkening will be used
     public bool linearDarkening;
 
-
     public class MeshData
     {
         public NativeArray<Vector3> vertices;
@@ -109,19 +103,17 @@ public class FastRotator : ocaInteractableBehaviour
         public List<int> indices;
     }
 
-    MeshData g_meshData;
-    Mesh mesh;
-    MeshFilter meshFilter;
+    MeshData _meshData;
+    Mesh _mesh;
+    MeshFilter _meshFilter;
 
-    MeshData g_collisionMeshData;
-    Mesh collisionMesh;
-    MeshCollider meshCollider;
-    Material material;
-    SphereData sphereData;
-    Shader quadraticLD;
-    Shader linearLD;
-
-    Recorder updateRecorder;
+    MeshData _collisionMeshData;
+    Mesh _collisionMesh;
+    MeshCollider _meshCollider;
+    Material _material;
+    SphereData _sphereData;
+    Shader _quadraticLD;
+    Shader _linearLD;
 
     FastRotator(int sectorCount, float initialVelocity, float radius)
     {
@@ -132,45 +124,45 @@ public class FastRotator : ocaInteractableBehaviour
 
     void toggleShader()
     {
-        if (linearDarkening && material.shader == quadraticLD)
-            material.shader = linearLD;
-        if (!linearDarkening && material.shader == linearLD)
-            material.shader = quadraticLD;
+        if (linearDarkening && _material.shader == _quadraticLD)
+            _material.shader = _linearLD;
+        if (!linearDarkening && _material.shader == _linearLD)
+            _material.shader = _quadraticLD;
 
     }
 
-    float prevRadius;
-    float prevVelocity;
+    float _prevRadius;
+    float _prevVelocity;
 
     void Start()
     {
-        prevRadius = radius;
-        material = GetComponent<Renderer>().material;
-        quadraticLD = Shader.Find("Example/QuadraticLD");
-        linearLD = Shader.Find("Example/LinearLD");
+        _prevRadius = radius;
+        _material = GetComponent<Renderer>().material;
+        _quadraticLD = Shader.Find("Example/QuadraticLD");
+        _linearLD = Shader.Find("Example/LinearLD");
         toggleShader();
 
-        meshFilter = GetComponent<MeshFilter>();
-        meshCollider = GetComponent<MeshCollider>();
-        meshCollider.cookingOptions = MeshColliderCookingOptions.UseFastMidphase;
-        mesh = new Mesh();
-        collisionMesh = new Mesh();
+        _meshFilter = GetComponent<MeshFilter>();
+        _meshCollider = GetComponent<MeshCollider>();
+        _meshCollider.cookingOptions = MeshColliderCookingOptions.UseFastMidphase;
+        _mesh = new Mesh();
+        _collisionMesh = new Mesh();
 
-        sphereData.actualSectorCount = sectorCount;
-        sphereData.actualStackCount = sphereData.actualSectorCount + 1;
-        int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
+        _sphereData.actualSectorCount = sectorCount;
+        _sphereData.actualStackCount = _sphereData.actualSectorCount + 1;
+        int vertexCount = (_sphereData.actualSectorCount + 1) * (_sphereData.actualStackCount + 1);
 
-        g_meshData = Generate(sectorCount, Mathf.Log10(velocity), 1);
-        g_collisionMeshData = Generate(8, Mathf.Log10(velocity), 1);
-        collisionMesh.SetVertices(g_collisionMeshData.vertices);
-        collisionMesh.SetIndices(g_collisionMeshData.indices, MeshTopology.Triangles, 0);
-        meshCollider.sharedMesh = collisionMesh;
+        _meshData = Generate(sectorCount, Mathf.Log10(velocity), 1);
+        _collisionMeshData = Generate(8, Mathf.Log10(velocity), 1);
+        _collisionMesh.SetVertices(_collisionMeshData.vertices);
+        _collisionMesh.SetIndices(_collisionMeshData.indices, MeshTopology.Triangles, 0);
+        _meshCollider.sharedMesh = _collisionMesh;
 
-        mesh.SetVertices(g_meshData.vertices);
-        mesh.SetIndices(g_meshData.indices, MeshTopology.Triangles, 0);
-        mesh.SetNormals(g_meshData.normals);
-        mesh.SetUVs(0, g_meshData.texCoords);
-        meshFilter.mesh = mesh;
+        _mesh.SetVertices(_meshData.vertices);
+        _mesh.SetIndices(_meshData.indices, MeshTopology.Triangles, 0);
+        _mesh.SetNormals(_meshData.normals);
+        _mesh.SetUVs(0, _meshData.texCoords);
+        _meshFilter.mesh = _mesh;
 
         foreach (var item in guiElementsDescriptor)
         {
@@ -195,61 +187,61 @@ public class FastRotator : ocaInteractableBehaviour
     {
         Vector3 camToObjectDirection = (transform.position - Camera.main.transform.position).normalized;
 
-        material.SetColor("colorTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
-        material.SetVector("cameraLookDirection", camToObjectDirection);
-        material.SetFloat("u", u);
-        material.SetFloat("a", a);
-        material.SetFloat("b", b);
+        _material.SetColor("colorTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
+        _material.SetVector("cameraLookDirection", camToObjectDirection);
+        _material.SetFloat("u", u);
+        _material.SetFloat("a", a);
+        _material.SetFloat("b", b);
         toggleShader();
 
 
 
 
-        bool changed = (prevVelocity != velocity);
+        bool _changed = (_prevVelocity != velocity);
 
-        if (prevRadius != radius)
+        if (_prevRadius != radius)
         {
             gameObject.transform.localScale = new Vector3(radius, radius, radius);
         }
 
-        if (changed)
+        if (_changed)
         {
-            prevRadius = radius;
-            prevVelocity = velocity;
-            sphereData = new SphereData();
-            sphereData.actualSectorCount = sectorCount;
-            sphereData.actualStackCount = sphereData.actualSectorCount + 1;
-            sphereData._ro = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
-            sphereData._y = new NativeArray<float>(sphereData.actualStackCount + 1, Allocator.Persistent);
+            _prevRadius = radius;
+            _prevVelocity = velocity;
+            _sphereData = new SphereData();
+            _sphereData.actualSectorCount = sectorCount;
+            _sphereData.actualStackCount = _sphereData.actualSectorCount + 1;
+            _sphereData._ro = new NativeArray<float>(_sphereData.actualStackCount + 1, Allocator.Persistent);
+            _sphereData._y = new NativeArray<float>(_sphereData.actualStackCount + 1, Allocator.Persistent);
 
-            sphereData.vertices = g_meshData.vertices;
-            sphereData.normals = g_meshData.normals;
-            sphereData.texCoords = g_meshData.texCoords;
+            _sphereData.vertices = _meshData.vertices;
+            _sphereData.normals = _meshData.normals;
+            _sphereData.texCoords = _meshData.texCoords;
 
-            int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
+            int vertexCount = (_sphereData.actualSectorCount + 1) * (_sphereData.actualStackCount + 1);
 
-            sphereData.radius = 1;
-            sphereData.V = Mathf.Log10(velocity);
-            sphereData.Schedule().Complete();
+            _sphereData.radius = 1;
+            _sphereData.V = Mathf.Log10(velocity);
+            _sphereData.Schedule().Complete();
 
-            mesh.SetVertices(sphereData.vertices);
-            mesh.SetIndices(g_meshData.indices, MeshTopology.Triangles, 0);
-            mesh.SetNormals(sphereData.normals);
-            mesh.SetUVs(0, sphereData.texCoords);
-            meshFilter.mesh = mesh;
-            sphereData._ro.Dispose();
-            sphereData._y.Dispose();
+            _mesh.SetVertices(_sphereData.vertices);
+            _mesh.SetIndices(_meshData.indices, MeshTopology.Triangles, 0);
+            _mesh.SetNormals(_sphereData.normals);
+            _mesh.SetUVs(0, _sphereData.texCoords);
+            _meshFilter.mesh = _mesh;
+            _sphereData._ro.Dispose();
+            _sphereData._y.Dispose();
         }
     }
 
     void OnDestroy()
     {
-        g_meshData.vertices.Dispose();
-        g_meshData.normals.Dispose();
-        g_meshData.texCoords.Dispose();
-        g_collisionMeshData.vertices.Dispose();
-        g_collisionMeshData.normals.Dispose();
-        g_collisionMeshData.texCoords.Dispose();
+        _meshData.vertices.Dispose();
+        _meshData.normals.Dispose();
+        _meshData.texCoords.Dispose();
+        _collisionMeshData.vertices.Dispose();
+        _collisionMeshData.normals.Dispose();
+        _collisionMeshData.texCoords.Dispose();
     }
 
 

@@ -1,4 +1,10 @@
-// :UNyD*>i
+/*
+    To make a GameObject interactable, its tag must be set to "Interactable".
+    Further, if you wish to show a HUD when selecting that GameObject, it must derive
+    from 'ocaInteractableBehaviour' (which is derived from 'MonoBehaviour')
+
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -17,6 +23,8 @@ using TMPro;
 public class RayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
+    OcaControllerHUD HUD;
+    public bool showHUD;
 
     enum InteractionStates
     {
@@ -71,6 +79,8 @@ public class RayInteractor : MonoBehaviour
     void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
+
+        if (!gameObject.TryGetComponent<OcaControllerHUD>(out HUD)) HUD = null;
     }
 
     void Update()
@@ -117,6 +127,7 @@ public class RayInteractor : MonoBehaviour
                 objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
 
                 hitObject = hitResult.transform.gameObject;
+                hitObject.tag = "Untagged";
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
                 hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 hitObjectRigidbody.isKinematic = true;
@@ -134,10 +145,10 @@ public class RayInteractor : MonoBehaviour
                 if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                     hitObject.transform.parent = attachPoint.transform;
 
-                if (hitObject.GetComponent<ocaInteractableBehaviour>() != null)
+                if (hitObject.GetComponent<OcaInteractable>() != null)
                 {
-                    GetComponent<ocaHUD>().target = hitObject.GetComponent<ocaInteractableBehaviour>();
-                    GetComponent<ocaHUD>().OnSelect();
+                    HUD.target = hitObject.GetComponent<OcaInteractable>();
+                    HUD.OnSelect();
                 }
             }
         }
@@ -188,6 +199,7 @@ public class RayInteractor : MonoBehaviour
 
             case InteractionStates.REALEASED:
                 {
+
                     attachPoint.transform.DetachChildren();
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
@@ -197,11 +209,12 @@ public class RayInteractor : MonoBehaviour
                     hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
                     float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
                     hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
+                    hitObject.tag = "Interactable";
                     hitObject = null;
                     hitObjectRigidbody = null;
                     interactionState = InteractionStates.NONE;
                     objectDisplacement = 0;
-                    GetComponent<ocaHUD>().OnDeselect();
+                    HUD.OnDeselect();
                 }
                 break;
             default: break;
