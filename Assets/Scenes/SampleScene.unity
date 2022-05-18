@@ -620,8 +620,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
-  velocity: 0.797
+  guiElementsDescriptor: []
+  velocity: 7.27
   radius: 0.3
   sectorCount: 66
   temperature: 3000
@@ -998,11 +998,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
+  guiElementsDescriptor: []
   velocity: 0
   radius: 22
   sectorCount: 66
-  temperature: 3000
+  temperature: 0
   u: 0.99
   a: 0.99
   b: 0.99
@@ -3247,7 +3247,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_BoundingSphereOverride: {x: 6.375e-42, y: 6e-44, z: 0, w: 1e-45}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
@@ -3446,8 +3446,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
-  velocity: 0.797
+  guiElementsDescriptor: []
+  velocity: 7.27
   radius: 0.3
   sectorCount: 66
   temperature: 3000
@@ -7207,9 +7207,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
-  velocity: 0.797
-  radius: 128
+  guiElementsDescriptor: []
+  velocity: 7.27
+  radius: 0.3
   sectorCount: 42
   temperature: 3000
   u: 0.99
@@ -8622,8 +8622,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
-  velocity: 0.797
+  guiElementsDescriptor: []
+  velocity: 7.27
   radius: 0.3
   sectorCount: 66
   temperature: 3000
@@ -10133,9 +10133,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UIParamaterMap: []
-  velocity: 0.797
-  radius: 48.79
+  guiElementsDescriptor: []
+  velocity: 7.27
+  radius: 0.3
   sectorCount: 66
   temperature: 3000
   u: 0.99
@@ -21610,7 +21610,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positionOffset: {x: -0.09, y: -0.11, z: 0.03}
-  selection: {fileID: 0}
+  target: {fileID: 0}
 --- !u!1 &7647519181726788212
 GameObject:
   m_ObjectHideFlags: 0
@@ -22099,7 +22099,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positionOffset: {x: 0.09, y: -0.11, z: 0.03}
-  selection: {fileID: 0}
+  target: {fileID: 0}
 --- !u!1 &7647519181856261220
 GameObject:
   m_ObjectHideFlags: 0

@@ -18,10 +18,6 @@ public class RayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
 
-    FileStream fs;
-    StreamWriter sw;
-
-
     enum InteractionStates
     {
         START,
@@ -103,7 +99,7 @@ public class RayInteractor : MonoBehaviour
             lineRenderer.SetPosition(1, Vector3.forward * hitResult.distance);
             lineRenderer.endWidth = .001f;
             if (!(indexTrigger | gripButton))
-            lineRenderer.startColor = Color.white;
+                lineRenderer.startColor = Color.white;
         }
         else
         {
@@ -124,7 +120,7 @@ public class RayInteractor : MonoBehaviour
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
                 hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 hitObjectRigidbody.isKinematic = true;
-                hitObjectRigidbody.useGravity = false;
+                // hitObjectRigidbody.useGravity = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
                 // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
@@ -153,7 +149,7 @@ public class RayInteractor : MonoBehaviour
 
 
         ///////////////////////////////////
-        // Interaction states management
+        // Interaction states
         ///////////////////////////////////
 
         bool noPreviousInteracion = interactionState == InteractionStates.NONE;
@@ -172,7 +168,7 @@ public class RayInteractor : MonoBehaviour
         {
             case InteractionStates.HOLDING:
                 {
-                    if (indexTrigger)
+                    if (indexTrigger || gripButton)
                     {
                         if (hitObjectRigidbody.constraints == (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                             break;
@@ -195,7 +191,7 @@ public class RayInteractor : MonoBehaviour
                     attachPoint.transform.DetachChildren();
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
-                    hitObjectRigidbody.useGravity = true;
+                    // hitObjectRigidbody.useGravity = true;
                     // hitObjectRigidbody.detectCollisions = true;
 
                     hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -223,22 +219,25 @@ public class RayInteractor : MonoBehaviour
                     {
                         if (primaryButton || secondaryButton)
                         {
+                            float zoom_factor = ((currentDistanceToObject - minDistance) / (minDistance));
+
                             if (((currentDistanceToObject) >= minDistance) && primaryButton)
                             {
                                 zoom = (-1 * Time.deltaTime);
                             }
                             else if (secondaryButton)
                             {
+                                if (zoom_factor < minZoomFactor) zoom_factor = minZoomFactor;
+
                                 zoom = (1 * Time.deltaTime);
                             }
 
-                            float zoom_factor = ((currentDistanceToObject - minDistance) / (minDistance));
-                            if (zoom_factor < minZoomFactor) zoom_factor = minZoomFactor;
-
                             if (zoom_factor > maxZoomFactor) zoom_factor = maxZoomFactor;
 
-                            if (collided && primaryButton)
+                            if (collided)
+                            {
                                 zoom = 0;
+                            }
 
                             objectDisplacement += zoom * zoom_factor * zoomFactorAttenuation.Evaluate(zoom_factor / maxZoomFactor);
                         }

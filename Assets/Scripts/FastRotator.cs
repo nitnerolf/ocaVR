@@ -22,14 +22,16 @@ public class GuiElementDescriptor
 {
     public ElementType elementType;
     public string fieldName;
+    public string displayName;
 
     // <summary>
     // Provide fieldName as is, otherwise the reflection system will not be able to find it
     // <summary>
-    public GuiElementDescriptor(ElementType type, string exactFieldName)
+    public GuiElementDescriptor(ElementType type, string exactFieldName, string displayName = null)
     {
         this.elementType = type;
         this.fieldName = exactFieldName;
+        this.displayName = displayName;
     }
 }
 
@@ -88,10 +90,10 @@ public class ocaInteractableBehaviour : MonoBehaviour
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
 public class FastRotator : ocaInteractableBehaviour
 {
-    [Range(0.01f, 1f)] public float velocity;
-    [Min(0f)] public float radius;
+    [Range(1.01f, 10f)] public float velocity;
+    [Range(.1f, 10f)] public float radius;
     [Min(3)] public int sectorCount;
-    [Range(0f, 10000f)] public float temperature;
+    [Range(1000f, 16000f)] public float temperature = 3000f;
     [Range(0.01f, 1f)] public float u;
     [Range(0.01f, 1f)] public float a;
     [Range(0.01f, 1f)] public float b;
@@ -158,8 +160,8 @@ public class FastRotator : ocaInteractableBehaviour
         sphereData.actualStackCount = sphereData.actualSectorCount + 1;
         int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
 
-        g_meshData = Generate(sectorCount, velocity, radius);
-        g_collisionMeshData = Generate(8, velocity, radius);
+        g_meshData = Generate(sectorCount, Mathf.Log10(velocity), 1);
+        g_collisionMeshData = Generate(8, Mathf.Log10(velocity), 1);
         collisionMesh.SetVertices(g_collisionMeshData.vertices);
         collisionMesh.SetIndices(g_collisionMeshData.indices, MeshTopology.Triangles, 0);
         meshCollider.sharedMesh = collisionMesh;
@@ -176,7 +178,9 @@ public class FastRotator : ocaInteractableBehaviour
         }
 
         // note:
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening"));
+        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening?"));
+        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
+        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u"));
@@ -198,7 +202,16 @@ public class FastRotator : ocaInteractableBehaviour
         material.SetFloat("b", b);
         toggleShader();
 
-        bool changed = (prevRadius != radius) || (prevVelocity != velocity);
+
+
+
+        bool changed = (prevVelocity != velocity);
+
+        if (prevRadius != radius)
+        {
+            gameObject.transform.localScale = new Vector3(radius, radius, radius);
+        }
+
         if (changed)
         {
             prevRadius = radius;
@@ -215,8 +228,8 @@ public class FastRotator : ocaInteractableBehaviour
 
             int vertexCount = (sphereData.actualSectorCount + 1) * (sphereData.actualStackCount + 1);
 
-            sphereData.radius = radius;
-            sphereData.V = velocity;
+            sphereData.radius = 1;
+            sphereData.V = Mathf.Log10(velocity);
             sphereData.Schedule().Complete();
 
             mesh.SetVertices(sphereData.vertices);

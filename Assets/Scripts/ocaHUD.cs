@@ -35,17 +35,17 @@ public class ocaHUD : MonoBehaviour
         public GameObject prefab;
 
         // todo(adlan): These Action signatures are long and redundant, find a way to make this syntax shorter for readability
-        public Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>,
-            Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>>> initFunction;
+        public Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>,
+            Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>>> initFunction;
 
-        public Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction;
+        public Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction;
 
         public ElementBlueprint(
             string name,
             GameObject prefab,
-            Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>,
-                Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>>> initFunction,
-            Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
+            Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>,
+                Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>>> initFunction,
+            Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
         {
             this.name = name;
             this.prefab = prefab;
@@ -107,7 +107,7 @@ public class ocaHUD : MonoBehaviour
             GameObject temp = Instantiate<GameObject>(type.prefab, parent);
             elementInstances.Add(p.fieldName, temp);
 
-            type.initFunction(p.fieldName, target, elementInstances, type.updateFunction);
+            type.initFunction(p.fieldName, p.displayName, target, elementInstances, type.updateFunction);
         }
     }
 
@@ -143,23 +143,26 @@ public class ocaHUD : MonoBehaviour
     // 'elementInstances' holds references to the actual UI elements that were instanciated for the given properties.
     // The idea is to get access to the elementInstances[<key>].<value> and set the relevent data for the UI component you're working with
 
-    private void InitLabel(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
+    private void InitLabel(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
     {
-        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = (string)target.GetValueByFieldName(fieldName);
+        string textToDisplay = String.IsNullOrEmpty(displayName) ? fieldName : displayName;
+        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = textToDisplay + ": " + (string)target.GetValueByFieldName(fieldName).ToString();
         // target.GetFieldByName(fieldName).
+
     }
 
-    private void UpdateLabel(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
+    private void UpdateLabel(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction = null)
     {
-        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = (string)target.GetValueByFieldName(fieldName);
+        string textToDisplay = String.IsNullOrEmpty(displayName) ? fieldName : displayName;
+        elementInstances[fieldName].GetComponent<TextMeshProUGUI>().text = textToDisplay + ": " + (string)target.GetValueByFieldName(fieldName).ToString();
     }
 
-    static void InitSlider(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
+    static void InitSlider(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
     {
         /*!Important*/
         Slider sliderComponent = elementInstances[fieldName].GetComponent<Slider>();
         /*!Important*/
-        sliderComponent.onValueChanged.AddListener(delegate { UpdateSlider(fieldName, target, elementInstances); });
+        sliderComponent.onValueChanged.AddListener(delegate { UpdateSlider(fieldName, displayName, target, elementInstances); });
 
         object o = target.GetValueByFieldName(fieldName);
         if (o == null)
@@ -177,12 +180,13 @@ public class ocaHUD : MonoBehaviour
             sliderComponent.minValue = attr.min;
         }
 
+        sliderComponent.value = ((float)o);
 
-        sliderComponent.SetValueWithoutNotify((float)o);
-        sliderComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName + ": " + (float)o;
+        string textToDisplay = String.IsNullOrEmpty(displayName) ? fieldName : displayName;
+        sliderComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = textToDisplay + ": " + (float)o;
     }
 
-    static void UpdateSlider(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
+    static void UpdateSlider(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
     {
         /*!Important*/
         Slider sliderComponent = elementInstances[fieldName].GetComponent<Slider>();
@@ -191,22 +195,23 @@ public class ocaHUD : MonoBehaviour
         sliderComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName + ": " + (float)sliderComponent.value;
     }
 
-    static void InitToggle(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
+    static void InitToggle(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances, Action<string, string, ocaInteractableBehaviour, Dictionary<string, GameObject>> updateFunction)
     {
         /*!Important*/
         Toggle toggleComponent = elementInstances[fieldName].GetComponent<Toggle>();
         /*!Important*/
-        toggleComponent.onValueChanged.AddListener(delegate { UpdateToggle(fieldName, target, elementInstances); });
+        toggleComponent.onValueChanged.AddListener(delegate { UpdateToggle(fieldName, displayName, target, elementInstances); });
 
         object o = target.GetValueByFieldName(fieldName);
         if (o == null)
             return;
 
         toggleComponent.isOn = (bool)o;
-        toggleComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = fieldName;
+        string textToDisplay = String.IsNullOrEmpty(displayName) ? fieldName : displayName;
+        toggleComponent.transform.GetComponentInChildren<TextMeshProUGUI>().text = textToDisplay;
     }
 
-    static void UpdateToggle(string fieldName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
+    static void UpdateToggle(string fieldName, string displayName, ocaInteractableBehaviour target, Dictionary<string, GameObject> elementInstances)
     {
         Toggle toggleComponent = elementInstances[fieldName].GetComponent<Toggle>();
         target.GetType().GetField(fieldName).SetValue(target, (bool)toggleComponent.isOn);
