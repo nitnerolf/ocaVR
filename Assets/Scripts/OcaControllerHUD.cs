@@ -95,6 +95,7 @@ public class OcaControllerHUD : MonoBehaviour
     {
         Debug.Assert(elementInstances.Count == 0, "elementInstances is not empty");
         HUDInstance.SetActive(true);
+        target.InjectHUDReference(this);
 
         foreach (var p in target.guiElementsDescriptor)
         {

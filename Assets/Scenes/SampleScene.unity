@@ -3247,7 +3247,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 4.5904e-41, y: -2.7723882e-30, z: 4.5904e-41, w: 9.403955e-38}
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0.000000005576812}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
@@ -21134,8 +21134,8 @@ GameObject:
   - component: {fileID: 7647519181007497830}
   - component: {fileID: 7647519181007497828}
   - component: {fileID: 7647519181007497832}
-  - component: {fileID: 7647519181007497826}
   - component: {fileID: 7647519181007497833}
+  - component: {fileID: 7647519181007497826}
   m_Layer: 0
   m_Name: Right Hand
   m_TagString: RightHand

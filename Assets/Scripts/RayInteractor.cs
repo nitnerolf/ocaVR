@@ -55,6 +55,7 @@ public class RayInteractor : MonoBehaviour
     float zoom = 0;
     bool collided = false;
     bool isAlreadyHoldingObject = false;
+    bool hasControllerHud;
 
     GameObject hitObject = null;
     Rigidbody hitObjectRigidbody = null;
@@ -78,9 +79,12 @@ public class RayInteractor : MonoBehaviour
 
     void Start()
     {
-        lineRenderer = GetComponent<LineRenderer>();
+        TryGetComponent<LineRenderer>(out lineRenderer);
 
-        if (!gameObject.TryGetComponent<OcaControllerHUD>(out HUD)) HUD = null;
+        if (!gameObject.TryGetComponent<OcaControllerHUD>(out HUD))
+        {
+            Debug.LogWarning("Missing controller hud");
+        }
     }
 
     void Update()
@@ -88,10 +92,26 @@ public class RayInteractor : MonoBehaviour
         handPosition = transform.position;
         handDirection = transform.TransformDirection(Vector3.forward);
 
+        // RayInteractor can be attached either on left hand or right hand or both,
+        // thus we need to know which one we're dealing with
+        // one solution was to apply tags i.e 'LeftHand'/'RightHand'
+        // Make sure they are present
         if (tag.Equals("LeftHand"))
+        {
             deviceControls = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        }
         else if (tag.Equals("RightHand"))
+        {
             deviceControls = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        }
+        else
+        {
+            Debug.LogWarning("Did you forget to set the right tags?");
+        }
+
+
+
+
 
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.triggerButton, out indexTrigger);
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.gripButton, out gripButton);
@@ -101,27 +121,33 @@ public class RayInteractor : MonoBehaviour
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceVelocity, out controllerVelocity);
         deviceControls.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceAcceleration, out controllerAccel);
 
+
+
+
+
         RaycastHit hitResult;
         bool hit = Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance, blockingMask);
 
-        if (hit)
+        if (hit && lineRenderer)
         {
             lineRenderer.SetPosition(1, Vector3.forward * hitResult.distance);
             lineRenderer.endWidth = .001f;
+
             if (!(indexTrigger | gripButton))
+            {
                 lineRenderer.startColor = Color.white;
+            }
         }
-        else
+        else if (lineRenderer)
         {
             lineRenderer.SetPosition(1, Vector3.forward * drawDistance);
         }
 
-        if (hit && (indexTrigger | gripButton))
+        if (hit && (indexTrigger ^ gripButton))
         {
             if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
             {
-                lineRenderer.startColor = Color.red;
-                // textDisplay.text = hitResult.transform.gameObject.name;
+                if (lineRenderer) lineRenderer.startColor = Color.red;
 
                 Vector3 hitLocationAtCenter = hitResult.transform.position;
                 objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
@@ -129,9 +155,8 @@ public class RayInteractor : MonoBehaviour
                 hitObject = hitResult.transform.gameObject;
                 hitObject.tag = "Untagged";
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
-                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
-                hitObjectRigidbody.isKinematic = true;
-                // hitObjectRigidbody.useGravity = false;
+                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                hitObjectRigidbody.isKinematic = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
                 // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
@@ -145,14 +170,13 @@ public class RayInteractor : MonoBehaviour
                 if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                     hitObject.transform.parent = attachPoint.transform;
 
-                if (hitObject.GetComponent<OcaInteractable>() != null)
+                if (HUD && hitObject.TryGetComponent<OcaInteractable>(out HUD.target))
                 {
-                    HUD.target = hitObject.GetComponent<OcaInteractable>();
                     HUD.OnSelect();
                 }
             }
         }
-        else
+        else if (lineRenderer)
         {
             lineRenderer.startColor = Color.green;
         }
@@ -214,7 +238,8 @@ public class RayInteractor : MonoBehaviour
                     hitObjectRigidbody = null;
                     interactionState = InteractionStates.NONE;
                     objectDisplacement = 0;
-                    HUD.OnDeselect();
+
+                    if (HUD) HUD.OnDeselect();
                 }
                 break;
             default: break;
