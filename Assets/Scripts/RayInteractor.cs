@@ -156,7 +156,7 @@ public class RayInteractor : MonoBehaviour
                 hitObject.tag = "Untagged";
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
                 hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
-                hitObjectRigidbody.isKinematic = false;
+                hitObjectRigidbody.isKinematic = true;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
                 // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
@@ -203,7 +203,7 @@ public class RayInteractor : MonoBehaviour
         {
             case InteractionStates.HOLDING:
                 {
-                    if (indexTrigger || gripButton)
+                    if (indexTrigger ^ gripButton)
                     {
                         if (hitObjectRigidbody.constraints == (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                             break;
@@ -223,7 +223,6 @@ public class RayInteractor : MonoBehaviour
 
             case InteractionStates.REALEASED:
                 {
-
                     attachPoint.transform.DetachChildren();
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
