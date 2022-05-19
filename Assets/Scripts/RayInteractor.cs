@@ -128,6 +128,7 @@ public class RayInteractor : MonoBehaviour
         RaycastHit hitResult;
         bool hit = Physics.Raycast(handPosition, handDirection, out hitResult, drawDistance, blockingMask);
 
+        // Hovering
         if (hit && lineRenderer)
         {
             lineRenderer.SetPosition(1, Vector3.forward * hitResult.distance);
@@ -143,78 +144,93 @@ public class RayInteractor : MonoBehaviour
             lineRenderer.SetPosition(1, Vector3.forward * drawDistance);
         }
 
-        if (hit && (indexTrigger ^ gripButton))
-        {
-            if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
-            {
-                if (lineRenderer) lineRenderer.startColor = Color.red;
-
-                Vector3 hitLocationAtCenter = hitResult.transform.position;
-                objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
-
-                hitObject = hitResult.transform.gameObject;
-                hitObject.tag = "Untagged";
-                hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
-                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
-                hitObjectRigidbody.isKinematic = true;
-                initialRotation = hitObject.transform.rotation.eulerAngles;
-                initialRotationQ = hitObjectRigidbody.rotation;
-                // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
-                hitObjectCenterToImpactDistance = Vector3.Distance(hitLocationAtCenter, hitResult.point);
-
-                if (gripButton)
-                {
-                    hitObject.transform.position = handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f);
-                    // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance ));
-                }
-                if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
-                    hitObject.transform.parent = attachPoint.transform;
-
-                if (HUD && hitObject.TryGetComponent<OcaInteractable>(out HUD.target))
-                {
-                    HUD.OnSelect();
-                }
-            }
-        }
-        else if (lineRenderer)
+        // Start
+        if (lineRenderer && lineRenderer.startColor != Color.green && !(indexTrigger ^ gripButton))
         {
             lineRenderer.startColor = Color.green;
         }
 
 
-
-        ///////////////////////////////////
+        ///////////////////////////////////////
         // Interaction states
-        ///////////////////////////////////
+        bool noPreviousInteracion = interactionState == InteractionStates.START;
+        bool isTrigger = (indexTrigger || gripButton);
 
-        bool noPreviousInteracion = interactionState == InteractionStates.NONE;
-        if ((indexTrigger | gripButton) && noPreviousInteracion && hitObject && !(isAlreadyHoldingObject))
+        if (hit && isTrigger && !isAlreadyHoldingObject)
+        {
+            if (hitResult.transform.gameObject.CompareTag("Interactable") && !hitObject)
+            {
+                interactionState = InteractionStates.START;
+                isAlreadyHoldingObject = true;
+            }
+        }
+        else if (isTrigger && interactionState == InteractionStates.START)
         {
             interactionState = InteractionStates.HOLDING;
-            isAlreadyHoldingObject = true;
         }
-        else if ((indexTrigger | gripButton) == false && interactionState == InteractionStates.HOLDING)
+        else if (!isTrigger && interactionState == InteractionStates.HOLDING)
         {
             interactionState = InteractionStates.REALEASED;
             isAlreadyHoldingObject = false;
         }
+        else if (interactionState == InteractionStates.REALEASED)
+        {
+            interactionState = InteractionStates.NONE;
+        }
+
+
+
 
         switch (interactionState)
         {
+            case InteractionStates.START:
+                {
+
+                    {
+                        if (lineRenderer) lineRenderer.startColor = Color.red;
+
+                        Vector3 hitLocationAtCenter = hitResult.transform.position;
+                        objectHitDistanceAtCenter = Vector3.Distance(handPosition, hitLocationAtCenter);
+
+                        hitObject = hitResult.transform.gameObject;
+                        hitObject.tag = "Untagged";
+                        hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
+                        hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                        hitObjectRigidbody.isKinematic = true;
+                        initialRotation = hitObject.transform.rotation.eulerAngles;
+                        initialRotationQ = hitObjectRigidbody.rotation;
+                        // hitObjectCenterToImpactDistance = objectHitDistanceAtCenter - hitResult.distance;
+                        hitObjectCenterToImpactDistance = Vector3.Distance(hitLocationAtCenter, hitResult.point);
+
+                        if (gripButton)
+                        {
+                            hitObject.transform.position = handPosition + handDirection * (hitObjectCenterToImpactDistance * 1.3f);
+                            // hitObjectRigidbody.MovePosition(handPosition + handDirection * (hitObjectCenterToImpactDistance ));
+                        }
+                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
+                            hitObject.transform.parent = attachPoint.transform;
+
+                        if (HUD && hitObject.TryGetComponent<OcaInteractable>(out HUD.target))
+                        {
+                            HUD.OnSelect();
+                        }
+                    }
+                }
+                break;
             case InteractionStates.HOLDING:
                 {
                     if (indexTrigger ^ gripButton)
                     {
-                        if (hitObjectRigidbody.constraints == (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
-                            break;
-
-                        if (Mathf.Abs(axis.x) > .7f)
+                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                         {
-                            hitObject.transform.Rotate(transform.forward * -1 * axis.x * rotationSpeed * Time.deltaTime, Space.World);
-                        }
-                        if (Mathf.Abs(axis.y) > .7f)
-                        {
-                            hitObject.transform.Rotate(Vector3.Cross(transform.up, transform.forward) * axis.y * rotationSpeed * Time.deltaTime, Space.World);
+                            if (Mathf.Abs(axis.x) > .7f)
+                            {
+                                hitObject.transform.Rotate(transform.forward * -1 * axis.x * rotationSpeed * Time.deltaTime, Space.World);
+                            }
+                            if (Mathf.Abs(axis.y) > .7f)
+                            {
+                                hitObject.transform.Rotate(Vector3.Cross(transform.up, transform.forward) * axis.y * rotationSpeed * Time.deltaTime, Space.World);
+                            }
                         }
                         // initialRotation += _rotation * rotationSpeed * Time.deltaTime;
                     }
@@ -235,7 +251,6 @@ public class RayInteractor : MonoBehaviour
                     hitObject.tag = "Interactable";
                     hitObject = null;
                     hitObjectRigidbody = null;
-                    interactionState = InteractionStates.NONE;
                     objectDisplacement = 0;
 
                     if (HUD) HUD.OnDeselect();

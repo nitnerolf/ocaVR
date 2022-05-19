@@ -90,7 +90,7 @@ public class OcaInteractable : MonoBehaviour
 public class FastRotator : OcaInteractable
 {
     [Range(1.01f, 10f)] public float velocity;
-    [Range(.1f, 10f)] public float radius;
+    [Range(.1f, 3f)] public float radius;
     [Min(3)] public int sectorCount;
     [Range(1000f, 16000f)] public float temperature = 3000f;
     [Range(0.01f, 1f)] public float u;
