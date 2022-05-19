@@ -155,7 +155,7 @@ public class RayInteractor : MonoBehaviour
                 hitObject = hitResult.transform.gameObject;
                 hitObject.tag = "Untagged";
                 hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
-                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 hitObjectRigidbody.isKinematic = false;
                 initialRotation = hitObject.transform.rotation.eulerAngles;
                 initialRotationQ = hitObjectRigidbody.rotation;
