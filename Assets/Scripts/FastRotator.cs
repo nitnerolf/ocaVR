@@ -1,90 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
-using UnityEngine.Profiling;
-
-using UnityEditor;
 using System;
-using System.Reflection;
-
-public enum ElementType
-{
-    Label,
-    Toggle,
-    Slider,
-}
-
-[Serializable]
-public class GuiElementDescriptor
-{
-    public ElementType elementType;
-    public string fieldName;
-    public string displayName;
-    // <summary>
-    // Provide fieldName as is, otherwise the reflection system will not be able to find it
-    // <summary>
-    public GuiElementDescriptor(ElementType type, string exactFieldName, string displayName = null)
-    {
-        this.elementType = type;
-        this.fieldName = exactFieldName;
-        this.displayName = displayName;
-    }
-}
-
-public class OcaInteractable : MonoBehaviour
-{
-    // maps fields to ui elements
-    [HideInInspector]
-    public List<GuiElementDescriptor> guiElementsDescriptor;
-    private OcaControllerHUD _HUD;
-
-    private bool IsValidFieldName(string fieldName)
-    {
-        if (string.IsNullOrEmpty(fieldName) || string.IsNullOrWhiteSpace(fieldName))
-        {
-            Debug.LogError("FieldName is empty or invalid");
-            return false;
-        }
-
-        if (this.GetType().GetField(fieldName) == null)
-        {
-            Debug.LogError("Cannot find field named '" + fieldName + "'");
-            return false;
-        }
-
-        return true;
-    }
-
-    public object GetValueByFieldName(string fieldName)
-    {
-
-        if (!IsValidFieldName(fieldName))
-            return null;
-
-        return this.GetType().GetField(fieldName).GetValue(this);
-    }
-
-    public FieldInfo GetFieldByName(string fieldName)
-    {
-        if (!IsValidFieldName(fieldName))
-            return null;
-
-        return this.GetType().GetField(fieldName);
-    }
-
-    public void InjectHUDReference(OcaControllerHUD HUD) {
-        this._HUD = HUD;
-    }
-}
-
-
-
-
-
-
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
 public class FastRotator : OcaInteractable
@@ -99,23 +18,14 @@ public class FastRotator : OcaInteractable
     // If not set, Quadratic Limb Darkening will be used
     public bool linearDarkening;
 
-    public class MeshData
-    {
-        public NativeArray<Vector3> vertices;
-        public NativeArray<Vector3> normals;
-        public NativeArray<Vector2> texCoords;
-        public List<int> indices;
-    }
-
-    MeshData _meshData;
-    Mesh _mesh;
-    MeshFilter _meshFilter;
-
-    MeshData _collisionMeshData;
+    SphereData _collisionMeshData;
     Mesh _collisionMesh;
     MeshCollider _meshCollider;
+
+    Mesh _mesh;
+    MeshFilter _meshFilter;
     Material _material;
-    SphereData _sphereData;
+    SphereData _sphereMeshData;
     Shader _quadraticLD;
     Shader _linearLD;
 
@@ -146,46 +56,61 @@ public class FastRotator : OcaInteractable
         _linearLD = Shader.Find("Example/LinearLD");
         toggleShader();
 
-        _meshFilter = GetComponent<MeshFilter>();
-        _meshCollider = GetComponent<MeshCollider>();
+        TryGetComponent<MeshFilter>(out _meshFilter);
+        TryGetComponent<MeshCollider>(out _meshCollider);
+
         _meshCollider.cookingOptions = MeshColliderCookingOptions.UseFastMidphase;
         _mesh = new Mesh();
         _collisionMesh = new Mesh();
 
-        _sphereData.actualSectorCount = sectorCount;
-        _sphereData.actualStackCount = _sphereData.actualSectorCount + 1;
-        int vertexCount = (_sphereData.actualSectorCount + 1) * (_sphereData.actualStackCount + 1);
-
-        _meshData = Generate(sectorCount, Mathf.Log10(velocity), 1);
-        _collisionMeshData = Generate(8, Mathf.Log10(velocity), 1);
-        _collisionMesh.SetVertices(_collisionMeshData.vertices);
-        _collisionMesh.SetIndices(_collisionMeshData.indices, MeshTopology.Triangles, 0);
-        _meshCollider.sharedMesh = _collisionMesh;
-
-        _mesh.SetVertices(_meshData.vertices);
-        _mesh.SetIndices(_meshData.indices, MeshTopology.Triangles, 0);
-        _mesh.SetNormals(_meshData.normals);
-        _mesh.SetUVs(0, _meshData.texCoords);
+        Generate(out _sphereMeshData, sectorCount, 1, 1);
+        _mesh.SetVertices(_sphereMeshData.vertices);
+        _mesh.SetIndices(_sphereMeshData.indices.AsArray(), MeshTopology.Triangles, 0);
+        _mesh.SetNormals(_sphereMeshData.normals);
+        _mesh.SetUVs(0, _sphereMeshData.texCoords);
         _meshFilter.mesh = _mesh;
+        _sphereMeshData.Dispose();
 
-        foreach (var item in guiElementsDescriptor)
-        {
-            print(item.fieldName);
-        }
+        Generate(out _collisionMeshData, 8, velocity, 1);
+        _collisionMesh.SetVertices(_collisionMeshData.vertices);
+        _collisionMesh.SetIndices(_collisionMeshData.indices.AsArray(), MeshTopology.Triangles, 0);
+        _meshCollider.sharedMesh = _collisionMesh;
+        _collisionMeshData.Dispose();
 
         // note:
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening?"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
+
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
+
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "a"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "b"));
     }
 
 
+    static void Generate(out SphereData _sphereMeshData, int sectorCount, float velocity, float radius)
+    {
+        _sphereMeshData = new SphereData();
+        _sphereMeshData.actualSectorCount = sectorCount;
+        _sphereMeshData.actualStackCount = _sphereMeshData.actualSectorCount + 1;
+        _sphereMeshData._ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
+        _sphereMeshData._y = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
 
+
+        int vertexCount = (_sphereMeshData.actualSectorCount + 1) * (_sphereMeshData.actualStackCount + 1);
+
+        _sphereMeshData.vertices = new NativeArray<Vector3>(vertexCount, Allocator.Persistent);
+        _sphereMeshData.normals = new NativeArray<Vector3>(vertexCount, Allocator.Persistent);
+        _sphereMeshData.texCoords = new NativeArray<Vector2>(vertexCount, Allocator.Persistent);
+        _sphereMeshData.indices = new NativeList<int>(sectorCount * sectorCount * 6, Allocator.Persistent);
+
+        _sphereMeshData.radius = 1;
+        _sphereMeshData.V = Mathf.Log10(velocity);
+        _sphereMeshData.Schedule().Complete();
+    }
 
     void Update()
     {
@@ -210,182 +135,25 @@ public class FastRotator : OcaInteractable
 
         if (_changed)
         {
+            print("generating endlessly");
             _prevRadius = radius;
             _prevVelocity = velocity;
-            _sphereData = new SphereData();
-            _sphereData.actualSectorCount = sectorCount;
-            _sphereData.actualStackCount = _sphereData.actualSectorCount + 1;
-            _sphereData._ro = new NativeArray<float>(_sphereData.actualStackCount + 1, Allocator.Persistent);
-            _sphereData._y = new NativeArray<float>(_sphereData.actualStackCount + 1, Allocator.Persistent);
 
-            _sphereData.vertices = _meshData.vertices;
-            _sphereData.normals = _meshData.normals;
-            _sphereData.texCoords = _meshData.texCoords;
+            Generate(out _sphereMeshData, sectorCount, 1, 1);
 
-            int vertexCount = (_sphereData.actualSectorCount + 1) * (_sphereData.actualStackCount + 1);
+            _sphereMeshData.radius = 1;
+            _sphereMeshData.V = Mathf.Log10(velocity);
+            _sphereMeshData.Schedule().Complete();
 
-            _sphereData.radius = 1;
-            _sphereData.V = Mathf.Log10(velocity);
-            _sphereData.Schedule().Complete();
-
-            _mesh.SetVertices(_sphereData.vertices);
-            _mesh.SetIndices(_meshData.indices, MeshTopology.Triangles, 0);
-            _mesh.SetNormals(_sphereData.normals);
-            _mesh.SetUVs(0, _sphereData.texCoords);
+            _mesh.SetVertices(_sphereMeshData.vertices);
+            _mesh.SetIndices(_sphereMeshData.indices.AsArray(), MeshTopology.Triangles, 0);
+            _mesh.SetNormals(_sphereMeshData.normals);
+            _mesh.SetUVs(0, _sphereMeshData.texCoords);
             _meshFilter.mesh = _mesh;
-            _sphereData._ro.Dispose();
-            _sphereData._y.Dispose();
+
+            _sphereMeshData.Dispose();
         }
     }
-
-    void OnDestroy()
-    {
-        _meshData.vertices.Dispose();
-        _meshData.normals.Dispose();
-        _meshData.texCoords.Dispose();
-        _collisionMeshData.vertices.Dispose();
-        _collisionMeshData.normals.Dispose();
-        _collisionMeshData.texCoords.Dispose();
-    }
-
-
-
-
-
-    ////////////////////////////////////
-    // Sphere Mesh generation
-    ////////////////////////////////
-
-    // todo:
-    // This function is in large part redundant(see SphereData.Execute()), we could potentially eliminate it to simplify this class.
-    // The only problem is that we need to generate the indicies somewhere else.
-    // We could do that conditionnaly in the SphereData.Execute() job
-    public MeshData Generate(int sectorCount, float V, float radius)
-    {
-        MeshData meshData = new MeshData();
-
-        float sectorStep;
-        float stackStep;
-        float theta;
-        float phi;
-
-        int stackCount = sectorCount + 1;
-        int vertexCount = (sectorCount + 1) * (stackCount + 1);
-        meshData.vertices = new NativeArray<Vector3>(vertexCount, Allocator.Persistent);
-        meshData.normals = new NativeArray<Vector3>(vertexCount, Allocator.Persistent);
-        meshData.texCoords = new NativeArray<Vector2>(vertexCount, Allocator.Persistent);
-        meshData.indices = new List<int>();
-
-        float[] _ro = new float[stackCount + 1];
-        float[] _y = new float[stackCount + 1];
-
-        float C1 = Mathf.Sin(1f / 3f);
-        float C2 = C1 * Mathf.PI;
-        float a = 2f / 3f * V;
-
-        _ro[0] = 0;
-        _y[0] = 1;
-        _ro[stackCount - 1] = 0;
-        _y[stackCount - 1] = -1;
-
-        for (int i = 1; i < (stackCount) / 2; i++)
-        {
-            float local_phi = Mathf.PI / 2f * (float)i / (float)(stackCount - 1) * 2;
-            float ff = Mathf.Pow(1.5f * a, 1.5f) * Mathf.Sin(local_phi);
-            float rr = a * C1 * Mathf.Asin(ff) / (ff / 3.0f);
-
-            _ro[i] = rr * Mathf.Sin(local_phi) / a * C2;
-            _ro[stackCount - 1 - i] = _ro[i];
-
-            _y[i] = rr * Mathf.Cos(local_phi) / a * C2;
-            _y[stackCount - 1 - i] = -_y[i];
-        }
-
-        _y[(stackCount - 1) / 2] = 0.0f;
-        float f = Mathf.Pow(1.5f * a, 1.5f);
-        float r = a * C1 * Mathf.Asin(f) / (f / 3.0f);
-        _ro[(stackCount - 1) / 2] = r / a * C2;
-
-
-
-
-        {// if sector/stack count changes
-            sectorStep = 2 * Mathf.PI / sectorCount;
-            stackStep = Mathf.PI / stackCount;
-        }
-
-
-        theta = 0;
-        phi = 0;
-
-        float x, y, z;
-        float nx, ny, nz;
-        float lengthInv = 1 / radius;
-
-        for (int i = 0; i <= stackCount; i++)
-        {
-            phi = Mathf.PI / 2 - i * stackStep; // starting from pi/2 to -pi/2
-            // ro = radius * Mathf.Cos(phi);
-            // y = radius * Mathf.Sin(phi); // up axis
-
-            for (int j = 0; j <= sectorCount; j++)
-            {
-                theta = j * sectorStep;
-                z = _ro[i] * Mathf.Cos(theta) * radius; // forward axis
-                x = _ro[i] * Mathf.Sin(theta) * radius; // right axis
-                y = _y[i] * radius;
-                meshData.vertices[j + i * (stackCount)] = (new Vector3(x, y, z));
-                nx = x * lengthInv;
-                ny = y * lengthInv;
-                nz = z * lengthInv;
-                meshData.normals[j + i * (stackCount)] = (new Vector3(nx, ny, nz));
-
-                float s = (float)j / sectorCount;
-                float t = (float)i / stackCount;
-                meshData.texCoords[j + i * (stackCount)] = (new Vector2(s, t));
-            }
-        }
-
-
-
-
-        //////////////////////////////
-        // Generating indices
-        //////////////////////////
-
-        int k1;
-        int k2;
-        for (int i = 0; i < stackCount; i++)
-        {
-            k1 = i * (sectorCount + 1); // beginning of current stack
-            k2 = k1 + sectorCount + 1; // beginning of next stack;
-
-            for (int j = 0; j < sectorCount; j++, k1++, k2++)
-            {
-                // 2 triangles per sector excluding first and last stacks
-                // k1 => k2 => k1+1
-                if (i != 0)
-                {
-                    meshData.indices.Add(k1);
-                    meshData.indices.Add(k2);
-                    meshData.indices.Add(k1 + 1);
-                }
-                // k1+1 => k2 => k2+1
-                if (i != (stackCount - 1))
-                {
-                    meshData.indices.Add(k1 + 1);
-                    meshData.indices.Add(k2);
-                    meshData.indices.Add(k2 + 1);
-                }
-            }
-        }
-
-        return meshData;
-    }
-
-
-
-
 
 
 
@@ -403,6 +171,7 @@ public class FastRotator : OcaInteractable
         public NativeArray<Vector3> vertices;
         public NativeArray<Vector3> normals;
         public NativeArray<Vector2> texCoords;
+        public NativeList<int> indices;
 
         public int actualSectorCount;
         public int actualStackCount;
@@ -416,7 +185,6 @@ public class FastRotator : OcaInteractable
 
         public void Execute()
         {
-
             float C1 = Mathf.Sin(1f / 3f);
             float C2 = C1 * Mathf.PI;
             float a = 2f / 3f * V;
@@ -485,6 +253,50 @@ public class FastRotator : OcaInteractable
                     texCoords[j + i * (actualStackCount)] = (new Vector2(s, t));
                 }
             }
+
+
+            //////////////////////////////
+            // Generating indices
+            //////////////////////////
+
+            int k1;
+            int k2;
+            for (int i = 0; i < actualStackCount; i++)
+            {
+                k1 = i * (actualSectorCount + 1); // beginning of current stack
+                k2 = k1 + actualSectorCount + 1; // beginning of next stack;
+
+                for (int j = 0; j < actualSectorCount; j++, k1++, k2++)
+                {
+                    // 2 triangles per sector excluding first and last stacks
+                    // k1 => k2 => k1+1
+                    if (i != 0)
+                    {
+                        indices.Add(k1);
+                        indices.Add(k2);
+                        indices.Add(k1 + 1);
+                    }
+                    // k1+1 => k2 => k2+1
+                    if (i != (actualStackCount - 1))
+                    {
+                        indices.Add(k1 + 1);
+                        indices.Add(k2);
+                        indices.Add(k2 + 1);
+                    }
+                }
+            }
+
+            // Debug.LogWarning(actualSectorCount * actualSectorCount * 6 + " vs " +);
+        }
+
+        public void Dispose()
+        {
+            _ro.Dispose();
+            _y.Dispose();
+            vertices.Dispose();
+            indices.Dispose();
+            normals.Dispose();
+            texCoords.Dispose();
         }
     }
 }

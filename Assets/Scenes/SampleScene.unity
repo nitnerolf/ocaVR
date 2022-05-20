@@ -1303,6 +1303,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1986218317581405160, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
         type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1986218317581405160, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
+        type: 3}
       propertyPath: m_TagString
       value: Interactable
       objectReference: {fileID: 0}
@@ -1420,10 +1425,6 @@ PrefabInstance:
       propertyPath: m_EnabledAudioTracks.Array.data[0]
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1192207280, guid: 38fd0d8712b1ae24985eee3b1fd3317f, type: 3}
-      propertyPath: m_Intensity
-      value: 28.18
-      objectReference: {fileID: 0}
     - target: {fileID: 1214748855029993810, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
         type: 3}
       propertyPath: m_RootOrder
@@ -1483,6 +1484,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Holo Adlan
+      objectReference: {fileID: 0}
+    - target: {fileID: 1986218317581405160, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1986218317581405160, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
         type: 3}
@@ -3250,7 +3256,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0.000000005576812}
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: -2.2692661}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
@@ -8674,7 +8680,7 @@ MonoBehaviour:
   guiElementsDescriptor: []
   velocity: 1.01
   radius: 0.1
-  sectorCount: 66
+  sectorCount: 8
   temperature: 1000
   u: 0.99
   a: 0.99
@@ -8814,6 +8820,14 @@ PrefabInstance:
     - target: {fileID: 306037554, guid: 38fd0d8712b1ae24985eee3b1fd3317f, type: 3}
       propertyPath: m_EnabledAudioTracks.Array.data[0]
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1192207280, guid: 38fd0d8712b1ae24985eee3b1fd3317f, type: 3}
+      propertyPath: m_Intensity
+      value: 26.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2042630835, guid: 38fd0d8712b1ae24985eee3b1fd3317f, type: 3}
+      propertyPath: m_Intensity
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 1214748855029993810, guid: 38fd0d8712b1ae24985eee3b1fd3317f,
         type: 3}
