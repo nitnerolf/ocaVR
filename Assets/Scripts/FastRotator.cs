@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
@@ -78,16 +77,17 @@ public class FastRotator : OcaInteractable
         _collisionMeshData.Dispose();
 
         // note:
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening?"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
 
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
 
+        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "a"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "b"));
+
     }
 
 
@@ -98,7 +98,6 @@ public class FastRotator : OcaInteractable
         _sphereMeshData.actualStackCount = _sphereMeshData.actualSectorCount + 1;
         _sphereMeshData._ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
         _sphereMeshData._y = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
-
 
         int vertexCount = (_sphereMeshData.actualSectorCount + 1) * (_sphereMeshData.actualStackCount + 1);
 
@@ -130,13 +129,12 @@ public class FastRotator : OcaInteractable
 
         if (_prevRadius != radius)
         {
+            _prevRadius = radius;
             gameObject.transform.localScale = new Vector3(radius, radius, radius);
         }
 
         if (_changed)
         {
-            print("generating endlessly");
-            _prevRadius = radius;
             _prevVelocity = velocity;
 
             Generate(out _sphereMeshData, sectorCount, 1, 1);
@@ -215,6 +213,7 @@ public class FastRotator : OcaInteractable
 
 
 
+
             {// if sector/stack count changes
                 sectorStep = 2 * Mathf.PI / actualSectorCount;
                 stackStep = Mathf.PI / actualStackCount;
@@ -285,8 +284,6 @@ public class FastRotator : OcaInteractable
                     }
                 }
             }
-
-            // Debug.LogWarning(actualSectorCount * actualSectorCount * 6 + " vs " +);
         }
 
         public void Dispose()

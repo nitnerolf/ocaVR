@@ -32,7 +32,7 @@ public class OcaInteractable : MonoBehaviour
     // maps fields to ui elements
     [HideInInspector]
     public List<GuiElementDescriptor> guiElementsDescriptor;
-    private OcaControllerHUD _HUD;
+    public OcaControllerHUD HUD;
 
     private bool IsValidFieldName(string fieldName)
     {
@@ -61,6 +61,6 @@ public class OcaInteractable : MonoBehaviour
     }
 
     public void InjectHUDReference(OcaControllerHUD HUD) {
-        this._HUD = HUD;
+        this.HUD = HUD;
     }
 }

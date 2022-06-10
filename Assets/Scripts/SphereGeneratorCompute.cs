@@ -37,6 +37,7 @@ public class SphereGeneratorCompute : MonoBehaviour
         uint threadZ = 0;
         computeShader.GetKernelThreadGroupSizes(_kernel, out threadX, out threadY, out threadZ);
         dispatchCount_x = 1;
+
         // dispatchCount_x = Mathf.CeilToInt((int)((vertices.Length) / threadX));
 
         // vertexBuffer = new ComputeBuffer(sphere.vertices.Length, 12); // 3*4bytes = sizeof(Vector3)
@@ -60,7 +61,6 @@ public class SphereGeneratorCompute : MonoBehaviour
         // request = AsyncGPUReadback.Request(vertexBuffer, asyncGPUReadbackCallback);
     }
 
-    public bool threaded;
     void Update()
     {
         // //run the compute shader, the position of particles will be updated in GPU

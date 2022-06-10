@@ -304,6 +304,7 @@ public class RayInteractor : MonoBehaviour
         }
     }
 
+
     void OnCollisionStay(Collision col)
     {
         if (col.gameObject.tag.Equals("Interactable"))
