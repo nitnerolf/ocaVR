@@ -115,7 +115,7 @@ public class FastRotator : OcaInteractable
     {
         Vector3 camToObjectDirection = (transform.position - Camera.main.transform.position).normalized;
 
-        _material.SetColor("colorTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
+        _material.SetColor("colorFromTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
         _material.SetVector("cameraLookDirection", camToObjectDirection);
         _material.SetFloat("u", u);
         _material.SetFloat("a", a);

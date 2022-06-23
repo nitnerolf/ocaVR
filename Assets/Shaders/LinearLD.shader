@@ -42,8 +42,8 @@ Shader "Example/LinearLD"
                 float4 _BaseMap_ST;
                 float _Emission;
             CBUFFER_END
-
-            uniform float4 colorTemperature;
+//
+            uniform half4 colorFromTemperature;
             uniform float3 cameraLookDirection;
             uniform float u;
             uniform float a;
@@ -191,7 +191,7 @@ Shader "Example/LinearLD"
                 {
                     accum += amp * snoise(X);
                     X *= (lacunarity + (snoise(X) + .1) * 0.0006);
-                    X = mtx * float1x3(X);
+                    X = mtx * float3x1(X);
 
                     total_amp += amp;
                     amp *= roughness;
@@ -230,12 +230,12 @@ Shader "Example/LinearLD"
 
             float3 ColorTemperatureToRGB(float temperatureInKelvins)
             {
-
                 float3 retColor;
+                float factor =2.1;
 
                 temperatureInKelvins = clamp(temperatureInKelvins, 1000.0, 40000.0) / 100.0;
 
-                if (temperatureInKelvins <= 66.0)
+                if (temperatureInKelvins <= 66.0 )
                 {
                     retColor.r = 1.0;
                     retColor.g = saturate(0.39008157876901960784 * log(temperatureInKelvins) - 0.63184144378862745098);
@@ -247,9 +247,9 @@ Shader "Example/LinearLD"
                     retColor.g = saturate(1.12989086089529411765 * pow(t, -0.0755148492));
                 }
 
-                if (temperatureInKelvins >= 66.0)
+                if (temperatureInKelvins >= 66.0 )
                 retColor.b = 1.0;
-                else if(temperatureInKelvins <= 19.0)
+                else if(temperatureInKelvins <= 19.0 )
                 retColor.b = 0.0;
                 else
                 retColor.b = saturate(0.54320678911019607843 * log(temperatureInKelvins - 10.0) - 1.19625408914);
@@ -261,16 +261,14 @@ Shader "Example/LinearLD"
             {
 
                 float2 uv = ((OUT.uv));
-                float2 normal = OUT.normal;
 
                 float x = uv.x;
                 float y = uv.y;
 
                 float ya = (y-.5)*M_PI;
-
                 uv.x = (x-.5)*(sin(ya)*tan(M_PI/2. - ya));
 
-                float t = _Time.y* 4.0;
+                float t = _Time.y* 0.6;
 
                 float3 spectrum[4];
                 // spectrum[0] = float3(1.00, 1.00, 0.00);
@@ -287,34 +285,40 @@ Shader "Example/LinearLD"
                 // spectrum[2] = float3(1.00, 0.40, 0.20);
                 // spectrum[3] = float3(1.0, .60, 0.0500);
 
-                float temp0 = colorTemperature;
-                float temp1 = 3000;
-                float i0 = pow(temp0/temp0, 4);
-                float i1 = pow(temp1/temp0, 4);
+                float temp1 = 2000; // cold
+                float temp0 = 2200; // hot
 
-                spectrum[1] = colorTemperature;
+                float i0 = 1;
+                float i1 =pow(temp1/temp0, 4);
+
+                spectrum[1] = ColorTemperatureToRGB(temp0);
                 spectrum[2] = ColorTemperatureToRGB(temp1);
 
-                uv *= 1000.;
+                uv *= 2000.;
 
                 float3 p = float3(uv.x, uv.y, t);
                 float3 q = float3(0.000995,0.00193,0.00590);
-                float3 r = float3(0.00120,0.00205,0.00027);
+                float3 r = float3(0.000120,0.00205,0.00027);
 
-                float f = granule(p, q, r);
+                granule(p, q, r);
 
                 float3 color2 = 0.0;
-                color2 = lerp(spectrum[1], spectrum[2], pow(length(q), 2.));
-                color2 = pow(color2, 2.0);
-                float4 granule =  float4( (color2 + spectrum[1]), 1.0);
+                // todo: instead of interpolating between colors, we should interpolate between the temperatures
+                // then use the result for... [what?]
+                color2 = lerp(spectrum[1]*i0, spectrum[2]*i1, clamp(pow(length(q), 2), 0, 1));
+
+
+                // color2 = pow(color2, 2.0);
+                float4 granule =  float4( (color2 ), 1.0);
 
                 float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                float4 darkening = granule * (1-(u)*(1-abs(cosTheta)));
+                float4 darkening = granule * (1-u*(1-abs(cosTheta)));
 
-                // return float4(spectrum[3], 1.);
+                // return colorFromTemperature;
+                // return float4(ColorTemperatureToRGB(1000).xyz, 1.);
 
                 // return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * granule * darkening;
-                return granule * (darkening);
+                return  darkening;
 
             }
             ENDHLSL
@@ -354,8 +358,8 @@ Shader "Example/LinearLD"
                 //         float4 _BaseMap_ST;
                 //         float _Emission;
             //     CBUFFER_END
-
-            //     uniform half4 colorTemperature;
+//
+                // uniform half4 colorFromTemperature;
             //     uniform float3 cameraLookDirection;
             //     uniform float u;
             //     uniform float a;
@@ -374,8 +378,8 @@ Shader "Example/LinearLD"
 
             //     half4 frag(VertexOutputs OUT) : SV_Target
             //     {
-                //         float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                //         half4 darkening = colorTemperature * (1-u*(1-abs(cosTheta)));
+                        // float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
+                        // half4 darkening = colorFromTemperature * (1-u*(1-abs(cosTheta)));
 
                 //         return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * darkening;
 
