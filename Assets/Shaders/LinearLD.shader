@@ -43,7 +43,8 @@ Shader "Example/LinearLD"
                 float _Emission;
             CBUFFER_END
 //
-            uniform half4 colorFromTemperature;
+            // uniform half4 temperature;
+            uniform float temperature;
             uniform float3 cameraLookDirection;
             uniform float u;
             uniform float a;
@@ -285,8 +286,8 @@ Shader "Example/LinearLD"
                 // spectrum[2] = float3(1.00, 0.40, 0.20);
                 // spectrum[3] = float3(1.0, .60, 0.0500);
 
-                float temp1 = 2000; // cold
-                float temp0 = 2200; // hot
+                float temp1 = temperature - 300; // cold
+                float temp0 = temperature; // hot
 
                 float i0 = 1;
                 float i1 =pow(temp1/temp0, 4);
@@ -314,7 +315,7 @@ Shader "Example/LinearLD"
                 float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
                 float4 darkening = granule * (1-u*(1-abs(cosTheta)));
 
-                // return colorFromTemperature;
+                // return temperature;
                 // return float4(ColorTemperatureToRGB(1000).xyz, 1.);
 
                 // return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * granule * darkening;
@@ -359,7 +360,7 @@ Shader "Example/LinearLD"
                 //         float _Emission;
             //     CBUFFER_END
 //
-                // uniform half4 colorFromTemperature;
+                // uniform half4 temperature;
             //     uniform float3 cameraLookDirection;
             //     uniform float u;
             //     uniform float a;
@@ -379,7 +380,7 @@ Shader "Example/LinearLD"
             //     half4 frag(VertexOutputs OUT) : SV_Target
             //     {
                         // float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                        // half4 darkening = colorFromTemperature * (1-u*(1-abs(cosTheta)));
+                        // half4 darkening = temperature * (1-u*(1-abs(cosTheta)));
 
                 //         return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * darkening;
 
