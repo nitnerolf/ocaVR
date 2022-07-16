@@ -93,6 +93,7 @@ public class OcaControllerHUD : MonoBehaviour
 
     public void OnSelect()
     {
+        if (elementInstances.Count != 0) elementInstances.Clear();
         Debug.Assert(elementInstances.Count == 0, "elementInstances is not empty");
         HUDInstance.SetActive(true);
         target.InjectHUDReference(this);

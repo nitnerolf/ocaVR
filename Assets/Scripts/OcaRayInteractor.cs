@@ -20,7 +20,7 @@ using TMPro;
 // rotate with joystick
 //
 
-public class RayInteractor : MonoBehaviour
+public class OcaRayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
     OcaControllerHUD HUD;
@@ -92,7 +92,7 @@ public class RayInteractor : MonoBehaviour
         handPosition = transform.position;
         handDirection = transform.TransformDirection(Vector3.forward);
 
-        // RayInteractor can be attached either on left hand or right hand or both,
+        // OcaRayInteractor can be attached either on left hand or right hand or both,
         // thus we need to know which one we're dealing with
         // one solution was to apply tags i.e 'LeftHand'/'RightHand'
         // Make sure they are present

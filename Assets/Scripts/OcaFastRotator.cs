@@ -5,7 +5,7 @@ using Unity.Burst;
 using System;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
-public class FastRotator : OcaInteractable
+public class OcaFastRotator : OcaInteractable
 {
     [Range(1.01f, 10f)] public float velocity;
     [Range(.1f, 3f)] public float radius;
@@ -24,7 +24,7 @@ public class FastRotator : OcaInteractable
     Shader _quadraticLD;
     Shader _linearLD;
 
-    FastRotator(int sectorCount, float initialVelocity, float radius)
+    OcaFastRotator(int sectorCount, float initialVelocity, float radius)
     {
         this.sectorCount = sectorCount;
         this.radius = radius;
