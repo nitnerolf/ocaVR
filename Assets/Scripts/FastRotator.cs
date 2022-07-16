@@ -12,10 +12,6 @@ public class FastRotator : OcaInteractable
     [Min(3)] public int sectorCount;
     [Range(1000f, 16000f)] public float temperature = 3000f;
     [Range(0.01f, 1f)] public float u;
-    [Range(0.01f, 1f)] public float a;
-    [Range(0.01f, 1f)] public float b;
-    // If not set, Quadratic Limb Darkening will be used
-    public bool linearDarkening;
 
     SphereData _collisionMeshData;
     Mesh _collisionMesh;
@@ -35,14 +31,6 @@ public class FastRotator : OcaInteractable
         this.velocity = initialVelocity;
     }
 
-    void toggleShader()
-    {
-        if (linearDarkening && _material.shader == _quadraticLD)
-            _material.shader = _linearLD;
-        if (!linearDarkening && _material.shader == _linearLD)
-            _material.shader = _quadraticLD;
-
-    }
 
     float _prevRadius;
     float _prevVelocity;
@@ -53,7 +41,6 @@ public class FastRotator : OcaInteractable
         _material = GetComponent<Renderer>().material;
         _quadraticLD = Shader.Find("Example/QuadraticLD");
         _linearLD = Shader.Find("Example/LinearLD");
-        toggleShader();
 
         TryGetComponent<MeshFilter>(out _meshFilter);
         TryGetComponent<MeshCollider>(out _meshCollider);
@@ -76,17 +63,11 @@ public class FastRotator : OcaInteractable
         _meshCollider.sharedMesh = _collisionMesh;
         _collisionMeshData.Dispose();
 
-        // note:
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
-
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
         guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
-
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "a"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "b"));
+        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u", "Darkening"));
 
     }
 
@@ -119,11 +100,6 @@ public class FastRotator : OcaInteractable
         _material.SetFloat("temperature", temperature);
         _material.SetVector("cameraLookDirection", camToObjectDirection);
         _material.SetFloat("u", u);
-        _material.SetFloat("a", a);
-        _material.SetFloat("b", b);
-        toggleShader();// todo(ad): no longer needed
-
-
 
 
         bool _changed = (_prevVelocity != velocity);
