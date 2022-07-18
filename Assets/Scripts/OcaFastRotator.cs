@@ -63,11 +63,16 @@ public class OcaFastRotator : OcaInteractable
         _meshCollider.sharedMesh = _collisionMesh;
         _collisionMeshData.Dispose();
 
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u", "Darkening"));
+
+        /*
+            Contrainer for fields of this class we want to expose as parameters in-game
+            see OcaControllerHUD
+        */
+        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
+        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "radius"));
+        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "velocity"));
+        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "temperature"));
+        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "u", "Darkening"));
 
     }
 
@@ -77,7 +82,7 @@ public class OcaFastRotator : OcaInteractable
         _sphereMeshData = new SphereData();
         _sphereMeshData.actualSectorCount = sectorCount;
         _sphereMeshData.actualStackCount = _sphereMeshData.actualSectorCount + 1;
-        _sphereMeshData._ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
+        _sphereMeshData.ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
         _sphereMeshData._y = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
 
         int vertexCount = (_sphereMeshData.actualSectorCount + 1) * (_sphereMeshData.actualStackCount + 1);
@@ -141,7 +146,7 @@ public class OcaFastRotator : OcaInteractable
     [BurstCompile(CompileSynchronously = true)]
     public struct SphereData : IJob
     {
-        public NativeArray<float> _ro;
+        public NativeArray<float> ro;
         public NativeArray<float> _y;
         public NativeArray<Vector3> vertices;
         public NativeArray<Vector3> normals;
@@ -164,9 +169,9 @@ public class OcaFastRotator : OcaInteractable
             float C2 = C1 * Mathf.PI;
             float a = 2f / 3f * V;
 
-            _ro[0] = 0;
+            ro[0] = 0;
             _y[0] = 1;
-            _ro[actualStackCount - 1] = 0;
+            ro[actualStackCount - 1] = 0;
             _y[actualStackCount - 1] = -1;
 
             for (int i = 1; i < (actualStackCount) / 2; i++)
@@ -175,8 +180,8 @@ public class OcaFastRotator : OcaInteractable
                 float ff = Mathf.Pow(1.5f * a, 1.5f) * Mathf.Sin(phi);
                 float rr = a * C1 * Mathf.Asin(ff) / (ff / 3.0f);
 
-                _ro[i] = rr * Mathf.Sin(phi) / a * C2;
-                _ro[actualStackCount - 1 - i] = _ro[i];
+                ro[i] = rr * Mathf.Sin(phi) / a * C2;
+                ro[actualStackCount - 1 - i] = ro[i];
 
                 _y[i] = rr * Mathf.Cos(phi) / a * C2;
                 _y[actualStackCount - 1 - i] = -_y[i];
@@ -185,16 +190,11 @@ public class OcaFastRotator : OcaInteractable
             _y[(actualStackCount - 1) / 2] = 0.0f;
             float f = Mathf.Pow(1.5f * a, 1.5f);
             float r = a * C1 * Mathf.Asin(f) / (f / 3.0f);
-            _ro[(actualStackCount - 1) / 2] = r / a * C2;
+            ro[(actualStackCount - 1) / 2] = r / a * C2;
 
 
-
-
-
-            {// if sector/stack count changes
-                sectorStep = 2 * Mathf.PI / actualSectorCount;
-                stackStep = Mathf.PI / actualStackCount;
-            }
+            sectorStep = 2 * Mathf.PI / actualSectorCount;
+            stackStep = Mathf.PI / actualStackCount;
 
             float x, y, z;
             float nx, ny, nz, lengthInv;
@@ -214,8 +214,8 @@ public class OcaFastRotator : OcaInteractable
                 {
                     theta = j * sectorStep;
 
-                    z = _ro[i] * Mathf.Cos(theta) * radius; // forward axis
-                    x = _ro[i] * Mathf.Sin(theta) * radius; // right axis
+                    z = ro[i] * Mathf.Cos(theta) * radius; // forward axis
+                    x = ro[i] * Mathf.Sin(theta) * radius; // right axis
                     y = _y[i] * radius;
                     vertices[j + i * (actualStackCount)] = (new Vector3(x, y, z));
 
@@ -265,7 +265,7 @@ public class OcaFastRotator : OcaInteractable
 
         public void Dispose()
         {
-            _ro.Dispose();
+            ro.Dispose();
             _y.Dispose();
             vertices.Dispose();
             indices.Dispose();

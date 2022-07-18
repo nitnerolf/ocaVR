@@ -1,11 +1,16 @@
+/*
+    The purpose of this class is to dynamically generate an interactable HUD interface
+    next to the controller it is attached on.
+
+    The interface will be populated with premade UI elements called 'ElementBlueprint'.
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
-
-// set RectTransform width/height: RectTransform.sizeDelta
 
 public class OcaControllerHUD : MonoBehaviour
 {
@@ -23,36 +28,8 @@ public class OcaControllerHUD : MonoBehaviour
     // todo(adlan): expose to inspector?
     Transform parent;
 
-
-
     [HideInInspector]
     public OcaInteractable target;
-
-
-    public class ElementBlueprint
-    {
-        public string name;
-        public GameObject prefab;
-
-        // todo(adlan): These Action signatures are long and redundant, find a way to make this syntax shorter for readability
-        public Action<string, string, OcaInteractable, Dictionary<string, GameObject>,
-            Action<string, string, OcaInteractable, Dictionary<string, GameObject>>> initFunction;
-
-        public Action<string, string, OcaInteractable, Dictionary<string, GameObject>> updateFunction;
-
-        public ElementBlueprint(
-            string name,
-            GameObject prefab,
-            Action<string, string, OcaInteractable, Dictionary<string, GameObject>,
-                Action<string, string, OcaInteractable, Dictionary<string, GameObject>>> initFunction,
-            Action<string, string, OcaInteractable, Dictionary<string, GameObject>> updateFunction)
-        {
-            this.name = name;
-            this.prefab = prefab;
-            this.initFunction = initFunction;
-            this.updateFunction = updateFunction;
-        }
-    }
 
     List<ElementBlueprint> elementBlueprints;
     Dictionary<string, GameObject> elementInstances;
@@ -61,7 +38,7 @@ public class OcaControllerHUD : MonoBehaviour
     {
         prefabHUDCanvas = Resources.Load<GameObject>(prefabAssetsPath + "HUDCanvas");
 
-        // todo(adlan): We must eventually load these into a hash table
+        // todo(adlan): We should eventually load these into a hash table
         // effectively avoiding to load these one by one and make the process more streamlined
         // see Resources.LoadAll<>
         prefabLabel = Resources.Load<GameObject>(prefabAssetsPath + "Label");
@@ -84,10 +61,14 @@ public class OcaControllerHUD : MonoBehaviour
         elementInstances = new Dictionary<string, GameObject>();
         target = null;
 
+        /*
+            Contrainer for HUD element prefabs and their functionnality
+            from which the actual HUD element will be instantiated
+        */
         elementBlueprints = new List<ElementBlueprint> {
-            {new ElementBlueprint("Label" /*Component Name*/, prefabLabel, InitLabel, null)},
-            {new ElementBlueprint("Slider" /*Component Name*/, prefabSlider, InitSlider, UpdateSlider)},
-            {new ElementBlueprint("Toggle" /*Component Name*/, prefabToggle, InitToggle, UpdateToggle)},
+            {new ElementBlueprint("Label", prefabLabel, InitLabel, null)},
+            {new ElementBlueprint("Slider", prefabSlider, InitSlider, UpdateSlider)},
+            {new ElementBlueprint("Toggle", prefabToggle, InitToggle, UpdateToggle)},
         };
     }
 
@@ -98,7 +79,7 @@ public class OcaControllerHUD : MonoBehaviour
         HUDInstance.SetActive(true);
         target.InjectHUDReference(this);
 
-        foreach (var p in target.guiElementsDescriptor)
+        foreach (var p in target.HUDElementDescriptors)
         {
             HUDTitle.text = target.transform.name;
 
