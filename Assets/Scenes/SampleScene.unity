@@ -783,16 +783,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 7.27
   radius: 0.1
   sectorCount: 32
   temperature: 2893
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!1 &163532968
 GameObject:
   m_ObjectHideFlags: 0
@@ -1162,16 +1159,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 0
   radius: 22
   sectorCount: 66
   temperature: 0
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!114 &242882666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3587,16 +3581,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 7.27
   radius: 0.1
   sectorCount: 32
   temperature: 3000
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!1 &739706541
 GameObject:
   m_ObjectHideFlags: 0
@@ -7223,16 +7214,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 7.27
   radius: 128
   sectorCount: 32
   temperature: 3000
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!64 &1198578738
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -8679,16 +8667,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 1.01
   radius: 0.1
   sectorCount: 32
   temperature: 1000
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!4 &1701301332
 Transform:
   m_ObjectHideFlags: 0
@@ -10200,16 +10185,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5edc4be6ea0a7458fe0fb734ad741e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guiElementsDescriptor: []
+  HUDElementDescriptors: []
   HUD: {fileID: 0}
   velocity: 7.27
   radius: 48.79
   sectorCount: 32
   temperature: 3000
   u: 0.99
-  a: 0.99
-  b: 0.99
-  linearDarkening: 1
 --- !u!64 &1964095912
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -21617,9 +21599,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7647519181726788213}
   - component: {fileID: 7647519181726788218}
-  - component: {fileID: 7647519181726788215}
   - component: {fileID: 7647519181726788219}
   - component: {fileID: 7647519181726788214}
+  - component: {fileID: 7647519181726788215}
   - component: {fileID: 7647519181726788220}
   m_Layer: 0
   m_Name: Left Hand
