@@ -39,10 +39,10 @@ Shader "Example/LinearLD"
             SAMPLER(sampler_BaseMap);
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseMap_ST;
-                float _Emission;
+            float4 _BaseMap_ST;
+            float _Emission;
             CBUFFER_END
-//
+            //
             // uniform half4 temperature;
             uniform float temperature;
             uniform float3 cameraLookDirection;
@@ -269,7 +269,7 @@ Shader "Example/LinearLD"
                 float ya = (y-.5)*M_PI;
                 uv.x = (x-.5)*(sin(ya)*tan(M_PI/2. - ya));
 
-                float t = _Time.y* 0.6;
+                float t = _Time.y* 0.9;
 
                 float3 spectrum[4];
                 // spectrum[0] = float3(1.00, 1.00, 0.00);
@@ -286,7 +286,7 @@ Shader "Example/LinearLD"
                 // spectrum[2] = float3(1.00, 0.40, 0.20);
                 // spectrum[3] = float3(1.0, .60, 0.0500);
 
-                float temp1 = temperature - 300; // cold
+                float temp1 = temperature - 600; // cold
                 float temp0 = temperature; // hot
 
                 float i0 = 1;
@@ -295,7 +295,7 @@ Shader "Example/LinearLD"
                 spectrum[1] = ColorTemperatureToRGB(temp0);
                 spectrum[2] = ColorTemperatureToRGB(temp1);
 
-                uv *= 2000.;
+                uv *= 1000;
 
                 float3 p = float3(uv.x, uv.y, t);
                 float3 q = float3(0.000995,0.00193,0.00590);
@@ -313,13 +313,15 @@ Shader "Example/LinearLD"
                 float4 granule =  float4( (color2 ), 1.0);
 
                 float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                float4 darkening = granule * (1-u*(1-abs(cosTheta)));
+                float4 darkening = granule * (1-u*(1-abs(cosTheta )));
+
+
 
                 // return temperature;
                 // return float4(ColorTemperatureToRGB(1000).xyz, 1.);
 
                 // return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * granule * darkening;
-                return  darkening;
+                return  darkening * i1 * 6.;
 
             }
             ENDHLSL
@@ -356,11 +358,11 @@ Shader "Example/LinearLD"
             //     SAMPLER(sampler_BaseMap);
 
             //     CBUFFER_START(UnityPerMaterial)
-                //         float4 _BaseMap_ST;
-                //         float _Emission;
+            //         float4 _BaseMap_ST;
+            //         float _Emission;
             //     CBUFFER_END
-//
-                // uniform half4 temperature;
+            //
+            // uniform half4 temperature;
             //     uniform float3 cameraLookDirection;
             //     uniform float u;
             //     uniform float a;
@@ -379,8 +381,8 @@ Shader "Example/LinearLD"
 
             //     half4 frag(VertexOutputs OUT) : SV_Target
             //     {
-                        // float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                        // half4 darkening = temperature * (1-u*(1-abs(cosTheta)));
+                // float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
+                // half4 darkening = temperature * (1-u*(1-abs(cosTheta)));
 
                 //         return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * darkening;
 
