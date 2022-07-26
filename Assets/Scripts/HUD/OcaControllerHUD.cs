@@ -23,7 +23,7 @@ public class OcaControllerHUD : MonoBehaviour
     GameObject prefabToggle;
     GameObject prefabSlider;
 
-    GameObject HUDInstance;
+    GameObject HUDCanvas;
     TextMeshProUGUI HUDTitle;
     // todo(adlan): expose to inspector?
     Transform parent;
@@ -38,28 +38,32 @@ public class OcaControllerHUD : MonoBehaviour
     {
         prefabHUDCanvas = Resources.Load<GameObject>(prefabAssetsPath + "HUDCanvas");
 
-        // todo(adlan): We should eventually load these into a hash table
-        // effectively avoiding to load these one by one and make the process more streamlined
-        // see Resources.LoadAll<>
+        /*
+            todo(adlan): We should eventually load these into a hash table
+            effectively avoiding to load these one by one and make the process more streamlined
+            see Resources.LoadAll<>
+        */
         prefabLabel = Resources.Load<GameObject>(prefabAssetsPath + "Label");
         prefabToggle = Resources.Load<GameObject>(prefabAssetsPath + "Toggle");
         prefabSlider = Resources.Load<GameObject>(prefabAssetsPath + "Slider");
 
-        HUDInstance = Instantiate<GameObject>(prefabHUDCanvas, transform);
-        HUDInstance.transform.position += positionOffset;
-        HUDInstance.GetComponent<Canvas>().worldCamera = Camera.main;
-        parent = HUDInstance.transform.Find("Panel").transform;
+        HUDCanvas = Instantiate<GameObject>(prefabHUDCanvas, transform);
+        HUDCanvas.transform.position += positionOffset;
+        HUDCanvas.GetComponent<Canvas>().worldCamera = Camera.main;
+
+        /*
+            Please be mindful about changing the HUDCanvas hierarchy or any names
+        */
+        parent = HUDCanvas.transform.Find("Panel").transform;
         HUDTitle = parent.transform.Find("Title").GetComponent<TextMeshProUGUI>();
         HUDTitle.text = string.Empty;
 
-        HUDInstance.SetActive(false);
+        HUDCanvas.SetActive(false);
 
         if (parent == null) Debug.LogError("failed to find Parent");
         if (prefabToggle == null) Debug.LogError("failed to load Toggle prefab");
         if (prefabSlider == null) Debug.LogError("failed to load Slider prefab");
 
-        elementInstances = new Dictionary<string, GameObject>();
-        target = null;
 
         /*
             Contrainer for HUD element prefabs and their functionnality
@@ -70,13 +74,22 @@ public class OcaControllerHUD : MonoBehaviour
             {new ElementBlueprint("Slider", prefabSlider, InitSlider, UpdateSlider)},
             {new ElementBlueprint("Toggle", prefabToggle, InitToggle, UpdateToggle)},
         };
+
+        /*
+            Container holding the instances of ElementBlueprint
+            (actual HUD elements that can be seen on the HUDCanvas)
+        */
+        elementInstances = new Dictionary<string, GameObject>();
+
+        
+        target = null;
     }
 
     public void OnSelect()
     {
         if (elementInstances.Count != 0) elementInstances.Clear();
         Debug.Assert(elementInstances.Count == 0, "elementInstances is not empty");
-        HUDInstance.SetActive(true);
+        HUDCanvas.SetActive(true);
         target.InjectHUDReference(this);
 
         foreach (var p in target.HUDElementDescriptors)
@@ -108,7 +121,7 @@ public class OcaControllerHUD : MonoBehaviour
         }
 
         HUDTitle.text = string.Empty;
-        HUDInstance.SetActive(false);
+        HUDCanvas.SetActive(false);
     }
 
 
