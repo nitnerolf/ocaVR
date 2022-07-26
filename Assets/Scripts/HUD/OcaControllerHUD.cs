@@ -43,6 +43,7 @@ public class OcaControllerHUD : MonoBehaviour
             effectively avoiding to load these one by one and make the process more streamlined
             see Resources.LoadAll<>
         */
+    
         prefabLabel = Resources.Load<GameObject>(prefabAssetsPath + "Label");
         prefabToggle = Resources.Load<GameObject>(prefabAssetsPath + "Toggle");
         prefabSlider = Resources.Load<GameObject>(prefabAssetsPath + "Slider");
@@ -81,7 +82,7 @@ public class OcaControllerHUD : MonoBehaviour
         */
         elementInstances = new Dictionary<string, GameObject>();
 
-        
+        // Reference to the interactable gameObject
         target = null;
     }
 
@@ -92,7 +93,7 @@ public class OcaControllerHUD : MonoBehaviour
         HUDCanvas.SetActive(true);
         target.InjectHUDReference(this);
 
-        foreach (var p in target.HUDElementDescriptors)
+        foreach (var p in target.HUDElements)
         {
             HUDTitle.text = target.transform.name;
 
@@ -155,9 +156,7 @@ public class OcaControllerHUD : MonoBehaviour
 
     static void InitSlider(string fieldName, string displayName, OcaInteractable target, Dictionary<string, GameObject> elementInstances, Action<string, string, OcaInteractable, Dictionary<string, GameObject>> updateFunction)
     {
-        /*!Important*/
         Slider sliderComponent = elementInstances[fieldName].GetComponent<Slider>();
-        /*!Important*/
         sliderComponent.onValueChanged.AddListener(delegate { UpdateSlider(fieldName, displayName, target, elementInstances); });
 
         object o = target.GetValueByFieldName(fieldName);
@@ -193,9 +192,7 @@ public class OcaControllerHUD : MonoBehaviour
 
     static void InitToggle(string fieldName, string displayName, OcaInteractable target, Dictionary<string, GameObject> elementInstances, Action<string, string, OcaInteractable, Dictionary<string, GameObject>> updateFunction)
     {
-        /*!Important*/
         Toggle toggleComponent = elementInstances[fieldName].GetComponent<Toggle>();
-        /*!Important*/
         toggleComponent.onValueChanged.AddListener(delegate { UpdateToggle(fieldName, displayName, target, elementInstances); });
 
         object o = target.GetValueByFieldName(fieldName);

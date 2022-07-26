@@ -14,7 +14,7 @@ public class OcaInteractable : MonoBehaviour
 {
     // maps class fields to HUD elements
     [HideInInspector]
-    public List<HUDElementDescriptor> HUDElementDescriptors;
+    public List<HUDElement> HUDElements;
     [HideInInspector]
     public OcaControllerHUD HUD;
 

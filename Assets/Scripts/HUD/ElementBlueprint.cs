@@ -1,8 +1,9 @@
 // Used in OcaControllerHUD
 // Each HUD element has a name, a prefab and can have an initialization and update functions.
 // The purpose of this class is to act as a data container for HUD elements that can be instantiated from this class, hence the 'Blueprint' name.
-// Each HUD element must be initialized and interacted with for those that are interactable like Sliders
-// Hence, each element 'can' implement initialization and update functions to be used by the ControllerHUD system
+// Each HUD element must be initialized and for those that are interactable like Sliders, an update function must be provided.
+// Hence, each element 'can' implement initialization and update functions to be used by the ControllerHUD system.
+// See OcaControllerHUD:142 for an implementation example
 
 using System.Collections.Generic;
 using UnityEngine;

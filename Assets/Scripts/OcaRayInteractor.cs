@@ -194,7 +194,14 @@ public class OcaRayInteractor : MonoBehaviour
 
                         hitObject = hitResult.transform.gameObject;
                         hitObject.tag = "Untagged";
+
                         hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
+                        if (!hitObject.TryGetComponent<Rigidbody>(out hitObjectRigidbody))
+                        {
+                            Debug.LogError("You must add a Rigidbody componont to interactable GameObjects");
+                            return;
+                        }
+
                         hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                         hitObjectRigidbody.isKinematic = true;
                         initialRotation = hitObject.transform.rotation.eulerAngles;
@@ -221,7 +228,7 @@ public class OcaRayInteractor : MonoBehaviour
                 {
                     if (indexTrigger ^ gripButton)
                     {
-                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
+                        if (hitObjectRigidbody && hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                         {
                             if (Mathf.Abs(axis.x) > .7f)
                             {
@@ -295,7 +302,11 @@ public class OcaRayInteractor : MonoBehaviour
                         }
 
                         Vector3 newPostion = handPosition + handDirection * (objectHitDistanceAtCenter + objectDisplacement);
-                        hitObjectRigidbody.MovePosition(newPostion);
+
+                        if (hitObjectRigidbody)
+                        {
+                            hitObjectRigidbody.MovePosition(newPostion);
+                        }
                     }
                 }
                 break;

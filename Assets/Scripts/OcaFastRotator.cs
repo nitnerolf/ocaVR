@@ -68,11 +68,11 @@ public class OcaFastRotator : OcaInteractable
             Contrainer for fields of this class we want to expose as parameters in-game
             see OcaControllerHUD
         */
-        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
-        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "radius"));
-        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "velocity"));
-        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "temperature"));
-        HUDElementDescriptors.Add(new HUDElementDescriptor(ElementType.Slider, "u", "Darkening"));
+        HUDElements.Add(new HUDElement(ElementType.Label, "sectorCount", "Sectors"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "radius"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "velocity"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "temperature"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "u", "Darkening"));
 
     }
 
