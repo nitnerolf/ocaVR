@@ -35,11 +35,34 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
-  m_Name: FastRotator Profile
+  m_Name: GlobalProfile
   m_EditorClassIdentifier: 
   components:
   - {fileID: -8037756505159836919}
   - {fileID: 6998424958209554671}
+  - {fileID: 5936244813886573840}
+--- !u!114 &5936244813886573840
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5485954d14dfb9a4c8ead8edb0ded5b1, type: 3}
+  m_Name: LiftGammaGain
+  m_EditorClassIdentifier: 
+  active: 1
+  lift:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: -0.04494382}
+  gamma:
+    m_OverrideState: 1
+    m_Value: {x: 0.99323404, y: 1, z: 0.99492466, w: -0.29213482}
+  gain:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 0.04494383}
 --- !u!114 &6998424958209554671
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -55,13 +78,13 @@ MonoBehaviour:
   active: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 0.77
+    m_Value: 0.74
   intensity:
     m_OverrideState: 1
-    m_Value: 1.98
+    m_Value: 1.83
   scatter:
     m_OverrideState: 1
-    m_Value: 0.829
+    m_Value: 0.828
   clamp:
     m_OverrideState: 1
     m_Value: 10.37
