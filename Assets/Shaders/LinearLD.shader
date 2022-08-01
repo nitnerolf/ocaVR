@@ -300,7 +300,7 @@ Shader "Example/LinearLD"
                 float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
                 float4 darkening = granule * (1-u*(1-abs(cosTheta )));
 
-                float intensity = i1 * 6.0;
+                float intensity = i1 * 1.0;
                 return  darkening * intensity;
 
             }
