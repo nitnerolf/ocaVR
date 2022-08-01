@@ -1,37 +1,21 @@
-using System.Collections;
+/*
+    This class is a wrapper for the 'MonoBehaviour' class.
+    You should inherit from OcaInteractable instead of MonoBehaviour if
+    you wish to attach a runtime controller HUD for the given object. This will enable
+    you to display and interact with the parameters of that object when it is selected.
+
+    See OcaControllerHUD for more information.
+*/
+
 using System.Collections.Generic;
 using UnityEngine;
-using System;
-
-public enum ElementType
-{
-    Label,
-    Toggle,
-    Slider,
-}
-
-[Serializable]
-public class GuiElementDescriptor
-{
-    public ElementType elementType;
-    public string fieldName;
-    public string displayName;
-    // <summary>
-    // Provide fieldName as is, otherwise the reflection system will not be able to find it
-    // <summary>
-    public GuiElementDescriptor(ElementType type, string exactFieldName, string displayName = null)
-    {
-        this.elementType = type;
-        this.fieldName = exactFieldName;
-        this.displayName = displayName;
-    }
-}
 
 public class OcaInteractable : MonoBehaviour
 {
-    // maps fields to ui elements
+    // maps class fields to HUD elements
     [HideInInspector]
-    public List<GuiElementDescriptor> guiElementsDescriptor;
+    public List<HUDElement> HUDElements;
+    [HideInInspector]
     public OcaControllerHUD HUD;
 
     private bool IsValidFieldName(string fieldName)

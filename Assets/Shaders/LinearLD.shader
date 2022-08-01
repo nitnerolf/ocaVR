@@ -3,8 +3,6 @@ Shader "Example/LinearLD"
 {
     Properties
     {
-        _Emission("Emissiom", float) = 0
-        [HDR] _EmissionColor("Color", Color) = (0,0,0)
         [MainTexture] _BaseMap("Base Map", 2D) = "white"
     }
 
@@ -39,11 +37,12 @@ Shader "Example/LinearLD"
             SAMPLER(sampler_BaseMap);
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseMap_ST;
-                float _Emission;
+            float4 _BaseMap_ST;
+            float _Emission;
             CBUFFER_END
-//
-            uniform half4 colorFromTemperature;
+            //
+            // uniform half4 temperature;
+            uniform float temperature;
             uniform float3 cameraLookDirection;
             uniform float u;
             uniform float a;
@@ -268,33 +267,20 @@ Shader "Example/LinearLD"
                 float ya = (y-.5)*M_PI;
                 uv.x = (x-.5)*(sin(ya)*tan(M_PI/2. - ya));
 
-                float t = _Time.y* 0.6;
+                float t = _Time.y* 0.9;
 
-                float3 spectrum[4];
-                // spectrum[0] = float3(1.00, 1.00, 0.00);
-                // spectrum[1] = float3(0.50, 0.00, 0.00);
-                // spectrum[2] = float3(1.00, 0.40, 0.20);
-                // spectrum[3] = float3(1.0, .60, 0.0500)*1.8;
 
-                // spectrum[0] = lerp(float3(1.00, 1.00, 0.00), darkening.xyz, .5);
-                // spectrum[1] = lerp(float3(0.50, 0.00, 0.00), darkening.xyz, .5);
-                // spectrum[2] = lerp(float3(1.00, 0.40, 0.20), darkening.xyz, .5);
-                // spectrum[3] = lerp(float3(1.00, .60, 0.050), darkening.xyz, .5);
-
-                // spectrum[1] = float3(0.50, 0.00, 0.00);
-                // spectrum[2] = float3(1.00, 0.40, 0.20);
-                // spectrum[3] = float3(1.0, .60, 0.0500);
-
-                float temp1 = 2000; // cold
-                float temp0 = 2200; // hot
+                float temp1 = temperature - 600; // cold
+                float temp0 = temperature; // hot
 
                 float i0 = 1;
                 float i1 =pow(temp1/temp0, 4);
 
-                spectrum[1] = ColorTemperatureToRGB(temp0);
-                spectrum[2] = ColorTemperatureToRGB(temp1);
+                float3 spectrum[2];
+                spectrum[0] = ColorTemperatureToRGB(temp0);
+                spectrum[1] = ColorTemperatureToRGB(temp1);
 
-                uv *= 2000.;
+                uv *= 1000;
 
                 float3 p = float3(uv.x, uv.y, t);
                 float3 q = float3(0.000995,0.00193,0.00590);
@@ -305,86 +291,20 @@ Shader "Example/LinearLD"
                 float3 color2 = 0.0;
                 // todo: instead of interpolating between colors, we should interpolate between the temperatures
                 // then use the result for... [what?]
-                color2 = lerp(spectrum[1]*i0, spectrum[2]*i1, clamp(pow(length(q), 2), 0, 1));
+                color2 = lerp(spectrum[0]*i0, spectrum[1]*i1, clamp(pow(length(q), 2), 0, 1));
 
 
                 // color2 = pow(color2, 2.0);
                 float4 granule =  float4( (color2 ), 1.0);
 
                 float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                float4 darkening = granule * (1-u*(1-abs(cosTheta)));
+                float4 darkening = granule * (1-u*(1-abs(cosTheta )));
 
-                // return colorFromTemperature;
-                // return float4(ColorTemperatureToRGB(1000).xyz, 1.);
-
-                // return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * granule * darkening;
-                return  darkening;
+                float intensity = i1 * 1.0;
+                return  darkening * intensity;
 
             }
             ENDHLSL
         }
-
-
-        //-------------------------
-
-
-        // Pass
-        // {
-            //     HLSLPROGRAM
-            //     #pragma vertex vert
-            //     #pragma fragment frag
-
-            //     #define M_PI 3.14159265359
-            //     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            //     struct VertexInputs
-            //     {
-                //         float4 positionOS   : POSITION;
-                //         float3 normal        : NORMAL;
-                //         float2 uv           : TEXCOORD0;
-            //     };
-
-            //     struct VertexOutputs
-            //     {
-                //         float4 positionHCS  : SV_POSITION;
-                //         float3 normal        : NORMAL;
-                //         float2 uv           : TEXCOORD0;
-            //     };
-
-            //     TEXTURE2D(_BaseMap);
-            //     SAMPLER(sampler_BaseMap);
-
-            //     CBUFFER_START(UnityPerMaterial)
-                //         float4 _BaseMap_ST;
-                //         float _Emission;
-            //     CBUFFER_END
-//
-                // uniform half4 colorFromTemperature;
-            //     uniform float3 cameraLookDirection;
-            //     uniform float u;
-            //     uniform float a;
-            //     uniform float b;
-            //     uniform int linearDarkening;
-
-            //     VertexOutputs vert(VertexInputs IN)
-            //     {
-                //         VertexOutputs OUT;
-                //         OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                //         OUT.normal = TransformObjectToWorldNormal(IN.normal);
-                //         OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-                //         return OUT;
-            //     }
-
-
-            //     half4 frag(VertexOutputs OUT) : SV_Target
-            //     {
-                        // float cosTheta = dot(cameraLookDirection * -1, OUT.normal);
-                        // half4 darkening = colorFromTemperature * (1-u*(1-abs(cosTheta)));
-
-                //         return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, OUT.uv) * darkening;
-
-            //     }
-            //     ENDHLSL
-        // }
     }
 }

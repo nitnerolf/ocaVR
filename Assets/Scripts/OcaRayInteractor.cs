@@ -5,22 +5,10 @@
 
 */
 
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using UnityEngine.XR;
-using TMPro;
 
-// todo:
-// hitObject lookat(controller)
-// move along Z with A/B
-// rotate with joystick
-//
-
-public class RayInteractor : MonoBehaviour
+public class OcaRayInteractor : MonoBehaviour
 {
     LineRenderer lineRenderer;
     OcaControllerHUD HUD;
@@ -92,7 +80,7 @@ public class RayInteractor : MonoBehaviour
         handPosition = transform.position;
         handDirection = transform.TransformDirection(Vector3.forward);
 
-        // RayInteractor can be attached either on left hand or right hand or both,
+        // OcaRayInteractor can be attached either on left hand or right hand or both,
         // thus we need to know which one we're dealing with
         // one solution was to apply tags i.e 'LeftHand'/'RightHand'
         // Make sure they are present
@@ -152,7 +140,7 @@ public class RayInteractor : MonoBehaviour
 
 
         ///////////////////////////////////////
-        // Interaction states
+        // Setting interaction states
         bool noPreviousInteracion = interactionState == InteractionStates.START;
         bool isTrigger = (indexTrigger || gripButton);
 
@@ -194,7 +182,14 @@ public class RayInteractor : MonoBehaviour
 
                         hitObject = hitResult.transform.gameObject;
                         hitObject.tag = "Untagged";
+
                         hitObjectRigidbody = hitObject.GetComponent<Rigidbody>();
+                        if (!hitObject.TryGetComponent<Rigidbody>(out hitObjectRigidbody))
+                        {
+                            Debug.LogError("You must add a Rigidbody componont to interactable GameObjects");
+                            return;
+                        }
+
                         hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
                         hitObjectRigidbody.isKinematic = true;
                         initialRotation = hitObject.transform.rotation.eulerAngles;
@@ -221,7 +216,7 @@ public class RayInteractor : MonoBehaviour
                 {
                     if (indexTrigger ^ gripButton)
                     {
-                        if (hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
+                        if (hitObjectRigidbody && hitObjectRigidbody.constraints != (RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ))
                         {
                             if (Mathf.Abs(axis.x) > .7f)
                             {
@@ -232,7 +227,6 @@ public class RayInteractor : MonoBehaviour
                                 hitObject.transform.Rotate(Vector3.Cross(transform.up, transform.forward) * axis.y * rotationSpeed * Time.deltaTime, Space.World);
                             }
                         }
-                        // initialRotation += _rotation * rotationSpeed * Time.deltaTime;
                     }
                 }
                 break;
@@ -242,9 +236,6 @@ public class RayInteractor : MonoBehaviour
                     attachPoint.transform.DetachChildren();
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
-                    // hitObjectRigidbody.useGravity = true;
-                    // hitObjectRigidbody.detectCollisions = true;
-
                     hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
                     float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
                     hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
@@ -295,7 +286,11 @@ public class RayInteractor : MonoBehaviour
                         }
 
                         Vector3 newPostion = handPosition + handDirection * (objectHitDistanceAtCenter + objectDisplacement);
-                        hitObjectRigidbody.MovePosition(newPostion);
+
+                        if (hitObjectRigidbody)
+                        {
+                            hitObjectRigidbody.MovePosition(newPostion);
+                        }
                     }
                 }
                 break;

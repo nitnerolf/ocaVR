@@ -5,17 +5,13 @@ using Unity.Burst;
 using System;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
-public class FastRotator : OcaInteractable
+public class OcaFastRotator : OcaInteractable
 {
     [Range(1.01f, 10f)] public float velocity;
     [Range(.1f, 3f)] public float radius;
     [Min(3)] public int sectorCount;
-    [Range(1000f, 16000f)] public float temperature = 3000f;
+    [Range(1000f, 10000f)] public float temperature = 3000f;
     [Range(0.01f, 1f)] public float u;
-    [Range(0.01f, 1f)] public float a;
-    [Range(0.01f, 1f)] public float b;
-    // If not set, Quadratic Limb Darkening will be used
-    public bool linearDarkening;
 
     SphereData _collisionMeshData;
     Mesh _collisionMesh;
@@ -28,21 +24,13 @@ public class FastRotator : OcaInteractable
     Shader _quadraticLD;
     Shader _linearLD;
 
-    FastRotator(int sectorCount, float initialVelocity, float radius)
+    OcaFastRotator(int sectorCount, float initialVelocity, float radius)
     {
         this.sectorCount = sectorCount;
         this.radius = radius;
         this.velocity = initialVelocity;
     }
 
-    void toggleShader()
-    {
-        if (linearDarkening && _material.shader == _quadraticLD)
-            _material.shader = _linearLD;
-        if (!linearDarkening && _material.shader == _linearLD)
-            _material.shader = _quadraticLD;
-
-    }
 
     float _prevRadius;
     float _prevVelocity;
@@ -53,7 +41,6 @@ public class FastRotator : OcaInteractable
         _material = GetComponent<Renderer>().material;
         _quadraticLD = Shader.Find("Example/QuadraticLD");
         _linearLD = Shader.Find("Example/LinearLD");
-        toggleShader();
 
         TryGetComponent<MeshFilter>(out _meshFilter);
         TryGetComponent<MeshCollider>(out _meshCollider);
@@ -76,17 +63,16 @@ public class FastRotator : OcaInteractable
         _meshCollider.sharedMesh = _collisionMesh;
         _collisionMeshData.Dispose();
 
-        // note:
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Label, "sectorCount", "Sectors"));
 
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "radius"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "velocity"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "temperature"));
-
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Toggle, "linearDarkening", "Linear Darkening"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "u"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "a"));
-        guiElementsDescriptor.Add(new GuiElementDescriptor(ElementType.Slider, "b"));
+        /*
+            Contrainer for fields of this class we want to expose as parameters in-game
+            see OcaControllerHUD
+        */
+        HUDElements.Add(new HUDElement(ElementType.Label, "sectorCount", "Sectors"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "radius"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "velocity"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "temperature"));
+        HUDElements.Add(new HUDElement(ElementType.Slider, "u", "Darkening"));
 
     }
 
@@ -96,7 +82,7 @@ public class FastRotator : OcaInteractable
         _sphereMeshData = new SphereData();
         _sphereMeshData.actualSectorCount = sectorCount;
         _sphereMeshData.actualStackCount = _sphereMeshData.actualSectorCount + 1;
-        _sphereMeshData._ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
+        _sphereMeshData.ro = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
         _sphereMeshData._y = new NativeArray<float>(_sphereMeshData.actualStackCount + 1, Allocator.Persistent);
 
         int vertexCount = (_sphereMeshData.actualSectorCount + 1) * (_sphereMeshData.actualStackCount + 1);
@@ -111,18 +97,16 @@ public class FastRotator : OcaInteractable
         _sphereMeshData.Schedule().Complete();
     }
 
+    public float a;
+    public float b;
     void Update()
     {
         Vector3 camToObjectDirection = (transform.position - Camera.main.transform.position).normalized;
 
-        _material.SetColor("colorFromTemperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
+        // _material.SetColor("temperature", Mathf.CorrelatedColorTemperatureToRGB(temperature));
+        _material.SetFloat("temperature", (temperature));
         _material.SetVector("cameraLookDirection", camToObjectDirection);
         _material.SetFloat("u", u);
-        _material.SetFloat("a", a);
-        _material.SetFloat("b", b);
-        toggleShader();
-
-
 
 
         bool _changed = (_prevVelocity != velocity);
@@ -164,7 +148,7 @@ public class FastRotator : OcaInteractable
     [BurstCompile(CompileSynchronously = true)]
     public struct SphereData : IJob
     {
-        public NativeArray<float> _ro;
+        public NativeArray<float> ro;
         public NativeArray<float> _y;
         public NativeArray<Vector3> vertices;
         public NativeArray<Vector3> normals;
@@ -187,9 +171,9 @@ public class FastRotator : OcaInteractable
             float C2 = C1 * Mathf.PI;
             float a = 2f / 3f * V;
 
-            _ro[0] = 0;
+            ro[0] = 0;
             _y[0] = 1;
-            _ro[actualStackCount - 1] = 0;
+            ro[actualStackCount - 1] = 0;
             _y[actualStackCount - 1] = -1;
 
             for (int i = 1; i < (actualStackCount) / 2; i++)
@@ -198,8 +182,8 @@ public class FastRotator : OcaInteractable
                 float ff = Mathf.Pow(1.5f * a, 1.5f) * Mathf.Sin(phi);
                 float rr = a * C1 * Mathf.Asin(ff) / (ff / 3.0f);
 
-                _ro[i] = rr * Mathf.Sin(phi) / a * C2;
-                _ro[actualStackCount - 1 - i] = _ro[i];
+                ro[i] = rr * Mathf.Sin(phi) / a * C2;
+                ro[actualStackCount - 1 - i] = ro[i];
 
                 _y[i] = rr * Mathf.Cos(phi) / a * C2;
                 _y[actualStackCount - 1 - i] = -_y[i];
@@ -208,16 +192,11 @@ public class FastRotator : OcaInteractable
             _y[(actualStackCount - 1) / 2] = 0.0f;
             float f = Mathf.Pow(1.5f * a, 1.5f);
             float r = a * C1 * Mathf.Asin(f) / (f / 3.0f);
-            _ro[(actualStackCount - 1) / 2] = r / a * C2;
+            ro[(actualStackCount - 1) / 2] = r / a * C2;
 
 
-
-
-
-            {// if sector/stack count changes
-                sectorStep = 2 * Mathf.PI / actualSectorCount;
-                stackStep = Mathf.PI / actualStackCount;
-            }
+            sectorStep = 2 * Mathf.PI / actualSectorCount;
+            stackStep = Mathf.PI / actualStackCount;
 
             float x, y, z;
             float nx, ny, nz, lengthInv;
@@ -237,8 +216,8 @@ public class FastRotator : OcaInteractable
                 {
                     theta = j * sectorStep;
 
-                    z = _ro[i] * Mathf.Cos(theta) * radius; // forward axis
-                    x = _ro[i] * Mathf.Sin(theta) * radius; // right axis
+                    z = ro[i] * Mathf.Cos(theta) * radius; // forward axis
+                    x = ro[i] * Mathf.Sin(theta) * radius; // right axis
                     y = _y[i] * radius;
                     vertices[j + i * (actualStackCount)] = (new Vector3(x, y, z));
 
@@ -288,7 +267,7 @@ public class FastRotator : OcaInteractable
 
         public void Dispose()
         {
-            _ro.Dispose();
+            ro.Dispose();
             _y.Dispose();
             vertices.Dispose();
             indices.Dispose();
