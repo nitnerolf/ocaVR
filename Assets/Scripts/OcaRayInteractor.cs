@@ -5,20 +5,8 @@
 
 */
 
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using UnityEngine.XR;
-using TMPro;
-
-// todo:
-// hitObject lookat(controller)
-// move along Z with A/B
-// rotate with joystick
-//
 
 public class OcaRayInteractor : MonoBehaviour
 {
@@ -152,7 +140,7 @@ public class OcaRayInteractor : MonoBehaviour
 
 
         ///////////////////////////////////////
-        // Interaction states
+        // Setting interaction states
         bool noPreviousInteracion = interactionState == InteractionStates.START;
         bool isTrigger = (indexTrigger || gripButton);
 
@@ -239,7 +227,6 @@ public class OcaRayInteractor : MonoBehaviour
                                 hitObject.transform.Rotate(Vector3.Cross(transform.up, transform.forward) * axis.y * rotationSpeed * Time.deltaTime, Space.World);
                             }
                         }
-                        // initialRotation += _rotation * rotationSpeed * Time.deltaTime;
                     }
                 }
                 break;
@@ -249,9 +236,6 @@ public class OcaRayInteractor : MonoBehaviour
                     attachPoint.transform.DetachChildren();
                     initialRotation = Vector3.zero;
                     hitObjectRigidbody.isKinematic = false;
-                    // hitObjectRigidbody.useGravity = true;
-                    // hitObjectRigidbody.detectCollisions = true;
-
                     hitObjectRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
                     float currentDistanceToObject = Vector3.Distance(hitObject.transform.position, handPosition);
                     hitObjectRigidbody.velocity = controllerVelocity * Mathf.Clamp(currentDistanceToObject, 2f, 8f);
